@@ -350,31 +350,19 @@ const UI = (() => {
   }
 
   // ================= sky plot: zoom/pan/tap =================
-  const skyplotView = { zoom:1, panX:0, panY:0, centerOn:null };
+  const skyplotView = { zoom:1 };
   function initSkyplotInteraction(){
     const wrap = $('skyplotWrap'), canvas = $('skyplot');
-    let dragging = false, lastX=0, lastY=0;
-    wrap.addEventListener('pointerdown', e => { dragging=true; lastX=e.clientX; lastY=e.clientY; wrap.setPointerCapture(e.pointerId); });
-    wrap.addEventListener('pointermove', e => {
-      if(!dragging) return;
-      skyplotView.panX += (e.clientX - lastX); skyplotView.panY += (e.clientY - lastY);
-      lastX = e.clientX; lastY = e.clientY;
-      drawSkyplot(App.state.results);
-    });
-    wrap.addEventListener('pointerup', e => {
-      dragging=false;
-      const moved = Math.abs(e.clientX-lastX)+Math.abs(e.clientY-lastY);
-      if(moved < 3) handleTap(e);
-    });
-    $('zoomIn').addEventListener('click', () => { skyplotView.zoom = Math.min(3, skyplotView.zoom*1.25); drawSkyplot(App.state.results); });
-    $('zoomOut').addEventListener('click', () => { skyplotView.zoom = Math.max(0.6, skyplotView.zoom/1.25); drawSkyplot(App.state.results); });
-    $('zoomReset').addEventListener('click', () => { skyplotView.zoom=1; skyplotView.panX=0; skyplotView.panY=0; drawSkyplot(App.state.results); });
+    wrap.addEventListener('click', handleTap);
+    $('zoomIn').addEventListener('click', () => { skyplotView.zoom = Math.min(2.2, skyplotView.zoom*1.2); drawSkyplot(App.state.results); });
+    $('zoomOut').addEventListener('click', () => { skyplotView.zoom = Math.max(0.7, skyplotView.zoom/1.2); drawSkyplot(App.state.results); });
+    $('zoomReset').addEventListener('click', () => { skyplotView.zoom = 1; drawSkyplot(App.state.results); });
 
     function handleTap(e){
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width/rect.width, scaleY = canvas.height/rect.height;
       const tx = (e.clientX-rect.left)*scaleX, ty = (e.clientY-rect.top)*scaleY;
-      let best=null, bestDist=30*scaleX;
+      let best=null, bestDist=32*scaleX;
       for(const m of lastPlotPoints){
         const d = Math.hypot(m.x-tx, m.y-ty);
         if(d<bestDist){ bestDist=d; best=m; }
@@ -393,35 +381,50 @@ const UI = (() => {
   }
 
   let lastPlotPoints = [];
+  let plotPulse = 0;
   function drawSkyplot(results){
     const canvas = $('skyplot'); if(!canvas) return;
     const ctx = canvas.getContext('2d');
     const W=canvas.width, H=canvas.height;
-    const baseCx=W/2, baseCy=H/2, baseR=W*0.4*skyplotView.zoom;
-    const cx = baseCx + skyplotView.panX*(W/canvas.clientWidth||1);
-    const cy = baseCy + skyplotView.panY*(H/canvas.clientHeight||1);
-    const R = baseR;
+    const cx = W/2, cy = H/2;
+    const R = W*0.4*skyplotView.zoom;
+    plotPulse += 0.06;
 
     ctx.clearRect(0,0,W,H);
 
-    // rings
-    ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1.5;
-    [0,30,60].forEach(elev => { const r=R*(1-elev/90); ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke(); });
-    ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2);
-    ctx.strokeStyle = 'rgba(94,234,212,0.35)'; ctx.stroke();
+    // subtle radial vignette for depth
+    const vg = ctx.createRadialGradient(cx,cy,0,cx,cy,R*1.15);
+    vg.addColorStop(0, 'rgba(94,234,212,0.05)');
+    vg.addColorStop(1, 'rgba(94,234,212,0)');
+    ctx.fillStyle = vg;
+    ctx.fillRect(0,0,W,H);
 
-    ctx.font='600 15px Inter, sans-serif'; ctx.fillStyle='#94A3B8'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    // elevation rings, finer + tick labels
+    ctx.lineWidth = 1;
+    [0,30,60].forEach(elev => {
+      const r=R*(1-elev/90);
+      ctx.strokeStyle = elev===0 ? 'rgba(94,234,212,0.3)' : 'rgba(255,255,255,0.08)';
+      ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke();
+      if(elev>0){
+        ctx.fillStyle='rgba(148,163,184,0.55)'; ctx.font='500 9px "IBM Plex Mono", monospace';
+        ctx.textAlign='left'; ctx.textBaseline='middle';
+        ctx.fillText(elev+'°', cx+4, cy-r+2);
+      }
+    });
+
+    // cardinal spokes + labels
+    ctx.font='700 14px Inter, sans-serif'; ctx.fillStyle='#CBD5E1'; ctx.textAlign='center'; ctx.textBaseline='middle';
     [['N',0],['E',90],['S',180],['W',270]].forEach(([label,az]) => {
       const rad=(az-90)*Math.PI/180;
-      ctx.strokeStyle='rgba(255,255,255,0.06)';
+      ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.lineWidth=1;
       ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+R*Math.cos(rad), cy+R*Math.sin(rad)); ctx.stroke();
-      ctx.fillText(label, cx+(R+18)*Math.cos(rad), cy+(R+18)*Math.sin(rad));
+      ctx.fillText(label, cx+(R+20)*Math.cos(rad), cy+(R+20)*Math.sin(rad));
     });
 
     // device heading arrow (if compass active)
     if(Compass.state.heading !== null){
       const rad=(Compass.state.heading-90)*Math.PI/180;
-      ctx.strokeStyle='rgba(251,191,36,0.8)'; ctx.lineWidth=2;
+      ctx.strokeStyle='rgba(251,191,36,0.75)'; ctx.lineWidth=2;
       ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+R*Math.cos(rad), cy+R*Math.sin(rad)); ctx.stroke();
     }
 
@@ -432,15 +435,19 @@ const UI = (() => {
       const px=cx+rr*Math.cos(rad), py=cy+rr*Math.sin(rad);
       const isVisible = r.visibility.tier==='visible';
       const isSelected = App.state.selected === r.name;
+      const color = isVisible ? '#22C55E' : (r.visibility.tier==='binoculars' ? '#FBBF24' : '#5EEAD4');
+
       ctx.beginPath();
-      ctx.fillStyle = isVisible ? '#22C55E' : (r.visibility.tier==='binoculars' ? '#FBBF24' : '#5EEAD4');
-      ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = isVisible ? 16 : 6;
-      ctx.globalAlpha = isVisible ? 1 : 0.7;
-      ctx.arc(px,py, isSelected?8:(isVisible?6:4), 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = color;
+      ctx.shadowColor = color; ctx.shadowBlur = isVisible ? 18 : 7;
+      ctx.globalAlpha = isVisible ? 1 : 0.75;
+      ctx.arc(px,py, isSelected?7:(isVisible?6:4), 0, Math.PI*2); ctx.fill();
       ctx.shadowBlur=0; ctx.globalAlpha=1;
+
       if(isSelected){
-        ctx.strokeStyle='#F8FAFC'; ctx.lineWidth=2;
-        ctx.beginPath(); ctx.arc(px,py,13,0,Math.PI*2); ctx.stroke();
+        const pulseR = 12 + Math.sin(plotPulse)*2.5;
+        ctx.strokeStyle = 'rgba(248,250,252,0.9)'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(px,py,pulseR,0,Math.PI*2); ctx.stroke();
       }
       lastPlotPoints.push({x:px,y:py,r});
     }
@@ -607,6 +614,10 @@ const UI = (() => {
     if('serviceWorker' in navigator){
       navigator.serviceWorker.register('sw.js').catch(() => {});
     }
+    (function pulseLoop(){
+      if(App.state.tracking && App.state.selected) drawSkyplot(App.state.results);
+      requestAnimationFrame(pulseLoop);
+    })();
   }
 
   return { toast, openDetails, openPointMeFor, init };
