@@ -515,6 +515,13 @@ const UI = (() => {
     }
     // success case is handled by the status listener below once a real reading arrives
   });
+  let roseRotation = null, needleRotation = null, lastHeadingSeen = null;
+  function shortestDelta(from, to){
+    let d = to - from;
+    while(d > 180) d -= 360;
+    while(d < -180) d += 360;
+    return d;
+  }
   Compass.on(({heading, pitch, status, message}) => {
     if(status === 'requesting'){
       $('headingLabel').textContent = message || 'Waiting for signal…';
@@ -527,8 +534,16 @@ const UI = (() => {
       $('compassBtn').disabled = true;
     }
     if(heading === null) return;
-    $('compassRose').style.transform = `rotate(${-heading}deg)`;
-    $('compassNeedle').style.transform = `rotate(${heading}deg)`;
+
+    if(lastHeadingSeen === null){
+      roseRotation = -heading; needleRotation = heading;
+    } else {
+      const delta = shortestDelta(lastHeadingSeen, heading);
+      roseRotation -= delta; needleRotation += delta;
+    }
+    lastHeadingSeen = heading;
+    $('compassRose').style.transform = `rotate(${roseRotation}deg)`;
+    $('compassNeedle').style.transform = `rotate(${needleRotation}deg)`;
     $('headingReadout').textContent = `${Math.round(heading)}°`;
     $('headingLabel').textContent = `Facing ${Compass.headingLabel(heading)} · ${Math.round(heading)}°`;
     if(pointmeOpen) updatePointMe();
@@ -547,6 +562,7 @@ const UI = (() => {
   function openPointMeFor(name){ App.select(name); openPointMe(); }
 
   let lastLockState = false;
+  let arrowRotation = null, lastDAz = null;
   function updatePointMe(){
     const r = App.state.results.find(x => x.name === App.state.selected);
     if(!r){ $('pointmeStatus').textContent='Satellite no longer above horizon.'; return; }
@@ -554,8 +570,10 @@ const UI = (() => {
     const dEl = Compass.pitchDelta(r.elev);
     if(dAz === null){ return; }
 
-    const arrowRot = dAz; // rotate arrow toward target relative to "up"
-    $('pointmeArrow').style.transform = `rotate(${arrowRot}deg)`;
+    if(arrowRotation === null){ arrowRotation = dAz; }
+    else{ arrowRotation += shortestDelta(lastDAz, dAz); }
+    lastDAz = dAz;
+    $('pointmeArrow').style.transform = `rotate(${arrowRotation}deg)`;
 
     const azOk = Math.abs(dAz) < 8;
     const elOk = dEl === null ? true : Math.abs(dEl) < 8;
