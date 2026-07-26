@@ -161,12 +161,16 @@ const UI = (() => {
       toast('This browser does not support notifications. On iPhone, install via "Add to Home Screen" first.');
       return;
     }
+    if(Notification.permission === 'denied'){
+      toast('Notifications are blocked for this site. Enable them in your browser\'s site settings (usually: tap the lock/info icon next to the address bar → Permissions → Notifications), then reload.');
+      return;
+    }
     const perm = await Notification.requestPermission();
     if(perm === 'granted'){
       App.state.notifyEnabled = true;
       $('notifyBtn').textContent = '🔔 Alerts on';
       $('notifyBtn').disabled = true;
-      new Notification('Overhead alerts enabled', { body: "You'll be notified the moment a satellite becomes visible.", icon:'icon.svg' });
+      new Notification('Overhead alerts enabled', { body: "You'll be notified the moment a satellite becomes visible.", icon:'icon-192.png' });
     } else {
       toast('Notification permission was not granted.');
     }
@@ -337,6 +341,11 @@ const UI = (() => {
     const r = App.state.results.find(x => x.name === name);
     if(!r) return;
     const v = r.visibility;
+    const observerGd = App.getObserverGd();
+    const countdown = observerGd ? App.estimateCountdown(r.satrec, observerGd, true) : null;
+    const countdownText = countdown
+      ? `Sets in ~${countdown.minutes} min`
+      : 'Stays above the horizon for the next 20+ min';
     $('detailsBody').innerHTML = `
       <div class="row between"><div class="section-title" style="margin:0;">${orbitEmoji(r.orbit.type)} ${esc(r.name)}</div>
       <button class="icon-btn" onclick="document.getElementById('detailsOverlay').classList.remove('open')">✕</button></div>
@@ -350,8 +359,11 @@ const UI = (() => {
         <div class="meta-mini"><div class="l">Sunlit</div><div class="v">${r.eclipsed?'No — in shadow':'Yes'}</div></div>
         <div class="meta-mini"><div class="l">Confidence</div><div class="v" style="color:${confColor(v.score)};">${v.score}%</div></div>
       </div>
+      <div class="row between" style="margin-top:14px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:10px 14px;">
+        <span class="small">⏱ Pass estimate</span><span style="font-weight:700; font-size:13px;">${countdownText}</span>
+      </div>
       <div style="margin-top:14px;">${tierBadge(v)}</div>
-      <p class="small" style="margin-top:12px; line-height:1.6;">Naked-eye confidence accounts for sun altitude, elevation/extinction, cloud cover, light pollution, moon brightness/proximity, and an estimated apparent magnitude. It's a heuristic guide, not a guarantee.</p>
+      <p class="small" style="margin-top:12px; line-height:1.6;">Naked-eye confidence accounts for sun altitude, elevation/extinction, cloud cover, light pollution, moon brightness/proximity, and an estimated apparent magnitude. It's a heuristic guide, not a guarantee. The pass estimate is a short forward simulation (up to 20 min), not a full multi-orbit prediction.</p>
       <button class="btn full" style="margin-top:16px;" onclick="document.getElementById('detailsOverlay').classList.remove('open'); UI.openPointMeFor('${escAttr(name)}')">🎯 Point me to it</button>
     `;
     $('detailsOverlay').classList.add('open');
@@ -491,19 +503,25 @@ const UI = (() => {
     toast(ok ? 'Calibrated — facing direction set as North.' : 'Enable the compass first, then calibrate.');
   });
 
-  // ================= theme + sound toggles =================
+  // ================= theme + sound toggles (now live in Settings) =================
+  let themeIsAmber = document.documentElement.getAttribute('data-theme') === 'amber';
   $('themeBtn').addEventListener('click', () => {
-    const cur = document.documentElement.getAttribute('data-theme');
-    document.documentElement.setAttribute('data-theme', cur === 'amber' ? '' : 'amber');
+    themeIsAmber = !themeIsAmber;
+    document.documentElement.setAttribute('data-theme', themeIsAmber ? 'amber' : '');
+    $('themeBtn').textContent = themeIsAmber ? 'Amber' : 'Cyan';
+    $('themeBtn').setAttribute('aria-pressed', String(themeIsAmber));
   });
   $('soundBtn').addEventListener('click', () => {
     soundOn = !soundOn;
     localStorage.setItem('overhead_sound', soundOn?'1':'0');
-    $('soundBtn').classList.toggle('icon-toggle'); $('soundBtn').classList.toggle('on', soundOn);
-    $('soundBtn').textContent = soundOn ? '🔊' : '🔔';
+    $('soundBtn').textContent = soundOn ? 'On' : 'Off';
+    $('soundBtn').setAttribute('aria-pressed', String(soundOn));
     toast(soundOn ? 'Sound effects on' : 'Sound effects off');
     if(soundOn) beep(880,0.1);
   });
+  // reflect the persisted sound preference on load
+  $('soundBtn').textContent = soundOn ? 'On' : 'Off';
+  $('soundBtn').setAttribute('aria-pressed', String(soundOn));
 
   // ================= compass wiring =================
   $('compassBtn').addEventListener('click', async () => {
@@ -647,12 +665,24 @@ const UI = (() => {
   // as long as it's not already running standalone.
   if(isIOS() && !isStandalone()) $('installBtn').classList.remove('hidden');
 
+  // ================= connectivity =================
+  window.addEventListener('offline', () => toast('📡 You\'re offline — location tracking keeps running, but weather and satellite data need a connection.'));
+  window.addEventListener('online', () => toast('✅ Back online.'));
+
   // ================= init =================
   function init(){
     initStarfield();
     attachRipples();
     initSkyplotInteraction();
     renderList([]);
+    if('Notification' in window && Notification.permission === 'denied'){
+      $('notifyBtn').textContent = '🔕 Alerts blocked';
+    }
+    if('Notification' in window && Notification.permission === 'granted'){
+      App.state.notifyEnabled = true;
+      $('notifyBtn').textContent = '🔔 Alerts on';
+      $('notifyBtn').disabled = true;
+    }
     if('serviceWorker' in navigator){
       navigator.serviceWorker.register('sw.js').catch(() => {});
     }

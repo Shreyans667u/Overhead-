@@ -29,6 +29,8 @@ const App = (() => {
   function emit(evt, payload){ (listeners[evt] || []).forEach(fn => fn(payload)); }
 
   // ---------------- geolocation (continuous, ~1s cadence) ----------------
+  let weatherIntervalId = null;
+
   function startTracking(){
     if(!navigator.geolocation){
       emit('error', 'Geolocation is not supported by this browser.');
@@ -44,19 +46,31 @@ const App = (() => {
         state.tracking = true;
         emit('trackingStarted', state.obs);
         refreshWeather();
-        setInterval(refreshWeather, 5 * 60 * 1000);
+        clearInterval(weatherIntervalId); // guard: never stack multiple weather timers across stop/start cycles
+        weatherIntervalId = setInterval(refreshWeather, 5 * 60 * 1000);
       }
       emit('position', state.obs);
     }, err => {
       stopTracking();
-      emit('error', 'Could not get your location: ' + err.message);
+      emit('error', geolocationErrorMessage(err));
     }, { enableHighAccuracy:true, maximumAge:1000, timeout:10000 });
+  }
+
+  function geolocationErrorMessage(err){
+    switch(err.code){
+      case 1: return "Location permission was denied. Enable it for this site in your browser's site settings, then tap Start live tracking again.";
+      case 2: return "Your device couldn't determine a location right now (no GPS/network fix). Try moving somewhere with a clearer sky view or better signal.";
+      case 3: return "Location request timed out. This can happen indoors — try again near a window or outdoors.";
+      default: return 'Could not get your location: ' + err.message;
+    }
   }
 
   function stopTracking(){
     if(state.watchId !== null) navigator.geolocation.clearWatch(state.watchId);
     state.watchId = null;
     state.tracking = false;
+    clearInterval(weatherIntervalId);
+    weatherIntervalId = null;
     emit('trackingStopped');
   }
 
@@ -166,10 +180,8 @@ const App = (() => {
 
   // orbit classification from mean motion (revs/day) via semi-major axis
   function classifyOrbit(satrec){
-    const n = satrec.no * (1440 / (2*Math.PI)); // rev/day
     const mu = 398600.4418; // km^3/s^2
-    const nRad = satrec.no / 60; // rad/min -> rad/s already? satrec.no is rad/min
-    const nPerSec = satrec.no / 60;
+    const nPerSec = satrec.no / 60; // satrec.no is rad/min -> rad/sec
     const a = Math.cbrt(mu / (nPerSec*nPerSec)); // km
     const altKm = a - 6371;
     if(altKm < 2000) return { type:'LEO', altKm };
@@ -249,10 +261,16 @@ const App = (() => {
     for(const name of currentlyVisible){
       if(!state.notifiedVisible.has(name)){
         const r = results.find(x => x.name === name);
-        new Notification(`🛰 ${name} is visible now`, {
+        const opts = {
           body: `${r.visibility.label} · el ${r.elev.toFixed(0)}° · az ${r.az.toFixed(0)}°`,
-          icon: 'icon.svg', tag: 'overhead-' + name
-        });
+          icon: 'icon-192.png', tag: 'overhead-' + name
+        };
+        if('serviceWorker' in navigator){
+          navigator.serviceWorker.ready.then(reg => reg.showNotification(`🛰 ${name} is visible now`, opts))
+            .catch(() => new Notification(`🛰 ${name} is visible now`, opts));
+        } else {
+          new Notification(`🛰 ${name} is visible now`, opts);
+        }
         emit('becameVisible', r);
       }
     }

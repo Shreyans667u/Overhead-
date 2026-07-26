@@ -7,7 +7,7 @@
  * line up," this is the standard technique lightweight sky apps use.
  */
 const AR = (() => {
-  let video, canvas, ctx, stream, raf;
+  let video, canvas, ctx, stream, raf, isOpen = false;
   const FOV_H = 62;  // assumed horizontal field of view, degrees (typical rear camera)
   const FOV_V = 46;  // assumed vertical field of view, degrees
 
@@ -18,20 +18,32 @@ const AR = (() => {
   }
 
   async function open(){
+    if(isOpen) return; // guard against double-tap opening two camera streams at once
+    isOpen = true;
     els();
     document.getElementById('arView').classList.add('open');
     try{
       stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio:false });
       video.srcObject = stream;
     }catch(e){
-      UI.toast('Camera access denied or unavailable — AR needs camera permission.');
+      const reason = (e.name === 'NotFoundError') ? 'No camera was found on this device.'
+        : (e.name === 'NotAllowedError') ? 'Camera access was denied — enable it for this site in your browser settings.'
+        : 'Camera access is unavailable: ' + e.message;
+      UI.toast(reason);
+      isOpen = false;
       close();
       return;
     }
     resize();
     window.addEventListener('resize', resize);
+    document.addEventListener('visibilitychange', onVisibilityChange);
     canvas.addEventListener('click', onTap);
     loop();
+  }
+
+  function onVisibilityChange(){
+    // don't leave the camera running (battery + a lit camera indicator) if the tab is backgrounded
+    if(document.hidden && isOpen) close();
   }
 
   function resize(){
@@ -42,9 +54,13 @@ const AR = (() => {
   function close(){
     document.getElementById('arView').classList.remove('open');
     if(stream) stream.getTracks().forEach(t => t.stop());
+    stream = null;
     if(raf) cancelAnimationFrame(raf);
+    raf = null;
     window.removeEventListener('resize', resize);
+    document.removeEventListener('visibilitychange', onVisibilityChange);
     if(canvas) canvas.removeEventListener('click', onTap);
+    isOpen = false;
   }
 
   let lastMarkers = [];

@@ -152,17 +152,12 @@ a{ color:var(--primary); }
 .icon-btn:active{ transform:scale(0.92); }
 .clock{ font-variant-numeric:tabular-nums; font-size:13px; color:var(--text-dim); font-weight:600; white-space:nowrap; }
 
-/* narrow phones: everything shrinks to actually fit, no horizontal scrolling required */
-@media (max-width:430px){
-  .topnav{ padding:0 10px; gap:6px; margin:10px 10px 0; }
-  .brand{ font-size:12.5px; gap:6px; }
-  .clock{ display:none; }
-  .nav-actions{ gap:3px; }
-  .icon-btn{ width:32px; height:32px; font-size:13px; }
-}
+/* narrow phones: still shrink slightly for very small widths, but with only
+   2 nav icons now (search + settings) this rarely needs to engage */
 @media (max-width:360px){
-  .brand{ font-size:11px; }
-  .icon-btn{ width:29px; height:29px; font-size:12px; }
+  .topnav{ padding:0 10px; gap:6px; margin:10px 10px 0; }
+  .brand{ font-size:12px; gap:6px; }
+  .clock{ display:none; }
 }
 
 /* ============ layout shell ============ */
@@ -360,8 +355,13 @@ a{ color:var(--primary); }
 .conf-fill{ height:100%; border-radius:4px; transition:width var(--dur-slow) var(--ease); }
 .conf-label{ font-size:11px; font-weight:700; white-space:nowrap; }
 .sat-actions{ display:flex; gap:6px; margin-top:12px; }
-.sat-actions .btn{ flex:1; padding:9px 10px; font-size:11.5px; }
-.fav-btn{ background:transparent; border:none; color:var(--text-dim); cursor:pointer; font-size:18px; transition:transform var(--dur-fast) var(--ease-bounce), color var(--dur-fast); }
+.sat-actions .btn{ flex:1; padding:9px 10px; font-size:11.5px; min-height:40px; }
+.fav-btn{
+  background:transparent; border:none; color:var(--text-dim); cursor:pointer; font-size:18px;
+  width:40px; height:40px; display:grid; place-items:center; border-radius:50%;
+  transition:transform var(--dur-fast) var(--ease-bounce), color var(--dur-fast), background var(--dur-fast);
+}
+.fav-btn:hover{ background:rgba(255,255,255,0.06); }
 .fav-btn.on{ color:var(--accent); transform:scale(1.15); }
 
 .skeleton{

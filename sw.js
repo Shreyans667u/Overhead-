@@ -1,7 +1,7 @@
 // Bump this on every deploy that changes any shell file. Changing this string
 // changes the byte content of this script, which is what makes browsers
 // notice a new service worker exists and actually install it.
-const CACHE = 'overhead-v3';
+const CACHE = 'overhead-v4';
 const SHELL = [
   './', './index.html', './styles.css', './visibility.js', './app.js',
   './compass.js', './ar.js', './ui.js', './manifest.json', './icon.svg',

@@ -29,8 +29,6 @@
     <div class="clock" id="clock" role="timer" aria-label="Current UTC time">--:--:--</div>
     <div class="nav-actions">
       <button class="icon-btn" id="searchBtn" aria-label="Search satellites (press /)">🔍</button>
-      <button class="icon-btn" id="soundBtn" aria-label="Toggle sound effects">🔔</button>
-      <button class="icon-btn" id="themeBtn" aria-label="Switch theme">🎨</button>
       <button class="icon-btn" id="settingsBtn" aria-label="Open settings">⚙️</button>
     </div>
   </nav>
@@ -173,6 +171,16 @@
       <div class="section-title" style="margin:0;">⚙️ Settings</div>
       <button class="icon-btn" id="settingsClose" aria-label="Close settings">✕</button>
     </div>
+
+    <div class="row between" style="padding:4px 0;">
+      <span class="small">🔊 Sound effects</span>
+      <button class="btn ghost sm" id="soundBtn" aria-pressed="false">Off</button>
+    </div>
+    <div class="row between" style="padding:8px 0 14px;">
+      <span class="small">🎨 Theme accent</span>
+      <button class="btn ghost sm" id="themeBtn" aria-pressed="false">Cyan</button>
+    </div>
+
     <label class="small" for="bortleSlider">💡 Local light pollution (Bortle scale): <b id="bortleVal" style="color:var(--text);">5</b></label>
     <input type="range" id="bortleSlider" min="1" max="9" value="5" style="margin:10px 0 4px;">
     <div class="row between small"><span>1 · pristine sky</span><span>9 · inner city</span></div>
