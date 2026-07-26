@@ -515,7 +515,7 @@ const UI = (() => {
     }
     // success case is handled by the status listener below once a real reading arrives
   });
-  let roseRotation = null, needleRotation = null, lastHeadingSeen = null;
+  let roseRotation = null, lastHeadingSeen = null;
   function shortestDelta(from, to){
     let d = to - from;
     while(d > 180) d -= 360;
@@ -535,15 +535,16 @@ const UI = (() => {
     }
     if(heading === null) return;
 
+    // Only the ring rotates (to show which cardinal direction is currently
+    // "forward"). The needle stays fixed pointing straight up — it's the
+    // "this is forward" reference, not a second thing that also spins.
     if(lastHeadingSeen === null){
-      roseRotation = -heading; needleRotation = heading;
+      roseRotation = -heading;
     } else {
-      const delta = shortestDelta(lastHeadingSeen, heading);
-      roseRotation -= delta; needleRotation += delta;
+      roseRotation -= shortestDelta(lastHeadingSeen, heading);
     }
     lastHeadingSeen = heading;
     $('compassRose').style.transform = `rotate(${roseRotation}deg)`;
-    $('compassNeedle').style.transform = `rotate(${needleRotation}deg)`;
     $('headingReadout').textContent = `${Math.round(heading)}°`;
     $('headingLabel').textContent = `Facing ${Compass.headingLabel(heading)} · ${Math.round(heading)}°`;
     if(pointmeOpen) updatePointMe();
