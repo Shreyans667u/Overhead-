@@ -2,41 +2,60 @@
 /*
  * Compass — wraps the DeviceOrientation API with circular smoothing (to
  * kill jitter) and a user-settable calibration offset. Exposes a simple
- * heading/pitch pair that compass.js/ar.js/ui.js consume.
+ * heading/pitch pair that ui.js/ar.js consume, plus a status string so the
+ * UI can explain *why* nothing is happening instead of sitting silent.
  *
  * Honesty note: mapping "which way the phone is pointing" from raw
  * alpha/beta/gamma is inherently approximate without a full rotation-matrix
  * + screen-orientation solve, and drifts by device/OS. The calibration
- * offset lets a user zero it against a known bright object (e.g. the Moon).
+ * offset lets a user zero it against a known reference direction.
  */
 const Compass = (() => {
   const state = {
     supported: 'DeviceOrientationEvent' in window,
     active: false,
-    heading: null,     // degrees, 0=N, clockwise, smoothed
-    pitch: null,        // degrees, device tilt used as a pointing-elevation proxy
+    heading: null,      // degrees, 0=N, clockwise, smoothed
+    pitch: null,         // degrees, device tilt used as a pointing-elevation proxy
     calibrationOffset: parseFloat(localStorage.getItem('overhead_compass_cal') || '0'),
-    permissionNeeded: typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function'
+    permissionNeeded: typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function',
+    // status: idle | requesting | active | no-support | denied | no-signal
+    status: 'idle',
+    message: ''
   };
 
   let sinF = 0, cosF = 1, pitchF = 0;
-  const SMOOTH = 0.15; // lower = smoother but laggier
+  let usingAbsolute = false;   // once a true-heading source appears, ignore lower-quality relative events
+  let watchdog = null;
+  const SMOOTH = 0.15;         // lower = smoother but laggier
+  const WATCHDOG_MS = 4000;
 
   const listeners = [];
   function on(fn){ listeners.push(fn); }
-  function emit(){ listeners.forEach(fn => fn({ heading: state.heading, pitch: state.pitch })); }
+  function emit(){ listeners.forEach(fn => fn({ heading: state.heading, pitch: state.pitch, status: state.status, message: state.message })); }
+
+  function setStatus(status, message=''){
+    state.status = status;
+    state.message = message;
+    emit();
+  }
 
   function handleOrientation(e){
-    let h;
+    let h = null;
+    let sourceIsHighQuality = false;
+
     if(typeof e.webkitCompassHeading === 'number'){
-      h = e.webkitCompassHeading; // iOS: already true compass heading
-    } else if(e.absolute && e.alpha !== null){
-      h = 360 - e.alpha; // Android absolute: alpha increases counter-clockwise from N
-    } else if(e.alpha !== null){
-      h = 360 - e.alpha; // best-effort fallback, may be relative not true north
+      h = e.webkitCompassHeading; // iOS: already a true compass heading
+      sourceIsHighQuality = true;
+    } else if(e.absolute === true && e.alpha !== null){
+      h = 360 - e.alpha; // true-north-referenced
+      sourceIsHighQuality = true;
+    } else if(e.alpha !== null && !usingAbsolute){
+      h = 360 - e.alpha; // best-effort fallback; may drift from true north
     } else {
-      return;
+      return; // a higher-quality stream is already active — ignore this noisier one
     }
+
+    if(sourceIsHighQuality) usingAbsolute = true;
     h = (h + state.calibrationOffset + 360) % 360;
 
     const rad = h * Math.PI / 180;
@@ -50,36 +69,67 @@ const Compass = (() => {
       pitchF += SMOOTH * (rawPitch - pitchF);
       state.pitch = pitchF;
     }
-    state.active = true;
-    emit();
+
+    if(!state.active){
+      state.active = true;
+      clearTimeout(watchdog);
+      setStatus('active');
+    } else {
+      emit();
+    }
   }
 
   async function requestAccess(){
-    if(!state.supported) return { ok:false, reason:'DeviceOrientation is not supported on this browser/device.' };
+    if(!state.supported){
+      setStatus('no-support', "This browser doesn't expose device orientation — try Chrome or Safari on a phone.");
+      return { ok:false, reason: state.message };
+    }
+    setStatus('requesting', 'Waiting for permission…');
+
     if(state.permissionNeeded){
       try{
         const res = await DeviceOrientationEvent.requestPermission();
-        if(res !== 'granted') return { ok:false, reason:'Permission was not granted.' };
+        if(res !== 'granted'){
+          setStatus('denied', 'Permission was denied. Enable Motion & Orientation access for this site in Settings → Safari, then retry.');
+          return { ok:false, reason: state.message };
+        }
       }catch(e){
-        return { ok:false, reason:'Permission request failed: ' + e.message };
+        setStatus('denied', 'Permission request failed: ' + e.message);
+        return { ok:false, reason: state.message };
       }
     }
+
+    usingAbsolute = false;
+    state.active = false;
+    sinF = 0; cosF = 1; pitchF = 0;
     window.addEventListener('deviceorientationabsolute', handleOrientation, true);
     window.addEventListener('deviceorientation', handleOrientation, true);
+
+    setStatus('requesting', 'Waiting for first compass reading…');
+    clearTimeout(watchdog);
+    watchdog = setTimeout(() => {
+      if(!state.active){
+        setStatus('no-signal', "No compass signal after a few seconds — this device may lack a magnetometer, or the browser is blocking sensor access. Try moving the phone in a figure-8, or reload and grant permission again.");
+      }
+    }, WATCHDOG_MS);
+
     return { ok:true };
   }
 
   function stop(){
     window.removeEventListener('deviceorientationabsolute', handleOrientation, true);
     window.removeEventListener('deviceorientation', handleOrientation, true);
+    clearTimeout(watchdog);
     state.active = false;
+    setStatus('idle');
   }
 
   function calibrateTo(trueHeadingNow){
-    if(state.heading === null) return;
+    if(state.heading === null) return false;
     const delta = trueHeadingNow - (state.heading - state.calibrationOffset);
     state.calibrationOffset = ((delta % 360) + 360) % 360;
     localStorage.setItem('overhead_compass_cal', String(state.calibrationOffset));
+    return true;
   }
 
   function headingLabel(h){

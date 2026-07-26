@@ -312,6 +312,14 @@ const UI = (() => {
   function esc(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function escAttr(s){ return esc(s).replace(/"/g,'&quot;'); }
 
+  document.addEventListener('keydown', e => {
+    if((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('sat-card')){
+      e.preventDefault();
+      App.select(e.target.dataset.name);
+      renderList(App.state.results);
+    }
+  });
+
   document.addEventListener('click', e => {
     const fav = e.target.closest('[data-fav]');
     if(fav){ App.toggleFavorite(fav.dataset.fav); renderList(App.state.results); return; }
@@ -461,7 +469,7 @@ const UI = (() => {
   $('paletteOverlay').addEventListener('click', e => { if(e.target.id==='paletteOverlay') closePalette(); });
   document.addEventListener('keydown', e => {
     if(e.key === '/' && document.activeElement.tagName !== 'INPUT'){ e.preventDefault(); openPalette(); }
-    if(e.key === 'Escape'){ closePalette(); $('settingsOverlay').classList.remove('open'); $('detailsOverlay').classList.remove('open'); closePointMe(); }
+    if(e.key === 'Escape'){ closePalette(); $('settingsOverlay').classList.remove('open'); $('detailsOverlay').classList.remove('open'); closePointMe(); if($('arView').classList.contains('open')) AR.close(); }
   });
   $('paletteInput').addEventListener('input', e => renderPaletteResults(e.target.value));
   function renderPaletteResults(q){
@@ -478,7 +486,10 @@ const UI = (() => {
   $('settingsBtn').addEventListener('click', () => $('settingsOverlay').classList.add('open'));
   $('settingsClose').addEventListener('click', () => $('settingsOverlay').classList.remove('open'));
   $('bortleSlider').addEventListener('input', e => { App.state.bortle = +e.target.value; $('bortleVal').textContent = e.target.value; if(App.state.sats.length) App.emit('frame', App.state.results); });
-  $('calibrateBtn').addEventListener('click', () => { Compass.calibrateTo(0); toast('Calibrated — facing direction set as North.'); });
+  $('calibrateBtn').addEventListener('click', () => {
+    const ok = Compass.calibrateTo(0);
+    toast(ok ? 'Calibrated — facing direction set as North.' : 'Enable the compass first, then calibrate.');
+  });
 
   // ================= theme + sound toggles =================
   $('themeBtn').addEventListener('click', () => {
@@ -496,13 +507,25 @@ const UI = (() => {
 
   // ================= compass wiring =================
   $('compassBtn').addEventListener('click', async () => {
+    setBtnLoading($('compassBtn'), true);
     const res = await Compass.requestAccess();
-    if(!res.ok){ toast(res.reason); return; }
-    $('compassBtn').textContent = 'Compass active';
-    $('compassBtn').disabled = true;
-    $('headingLabel').textContent = 'Live';
+    if(!res.ok){
+      setBtnLoading($('compassBtn'), false, 'Enable compass');
+      toast(res.reason);
+    }
+    // success case is handled by the status listener below once a real reading arrives
   });
-  Compass.on(({heading, pitch}) => {
+  Compass.on(({heading, pitch, status, message}) => {
+    if(status === 'requesting'){
+      $('headingLabel').textContent = message || 'Waiting for signal…';
+    } else if(status === 'no-signal' || status === 'denied' || status === 'no-support'){
+      setBtnLoading($('compassBtn'), false, 'Retry compass');
+      $('headingLabel').textContent = message;
+      toast(message);
+    } else if(status === 'active'){
+      setBtnLoading($('compassBtn'), false, 'Compass active');
+      $('compassBtn').disabled = true;
+    }
     if(heading === null) return;
     $('compassRose').style.transform = `rotate(${-heading}deg)`;
     $('compassNeedle').style.transform = `rotate(${heading}deg)`;
