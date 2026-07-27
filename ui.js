@@ -244,7 +244,72 @@ const UI = (() => {
       grid.innerHTML = explainEmpty();
       return;
     }
-    grid.innerHTML = list.slice(0,80).map(r => satCard(r)).join('');
+
+    // if the grid currently holds a skeleton/empty-state (not real cards), start fresh
+    if(!grid.querySelector('.sat-card')) grid.innerHTML = '';
+
+    const shown = list.slice(0,80);
+    const existing = new Map();
+    grid.querySelectorAll('.sat-card').forEach(el => existing.set(el.dataset.name, el));
+    const keep = new Set(shown.map(r => r.name));
+
+    // drop cards for satellites no longer in the filtered list
+    for(const [name, el] of existing){
+      if(!keep.has(name)) el.remove();
+    }
+
+    let prevEl = null;
+    for(const r of shown){
+      let el = existing.get(r.name);
+      if(el){
+        updateCardEl(el, r);
+      } else {
+        el = createCardEl(r);
+      }
+      // ensure DOM order matches sorted order without recreating nodes
+      if(prevEl ? prevEl.nextElementSibling !== el : grid.firstElementChild !== el){
+        grid.insertBefore(el, prevEl ? prevEl.nextElementSibling : grid.firstElementChild);
+      }
+      prevEl = el;
+    }
+  }
+
+  function createCardEl(r){
+    const tmp = document.createElement('div');
+    tmp.innerHTML = cardHTML(r);
+    const el = tmp.firstElementChild;
+    el.classList.add('card-enter');
+    $('satGrid').appendChild(el);
+    return el;
+  }
+
+  function updateCardEl(el, r){
+    const v = r.visibility;
+    el.classList.toggle('selected', App.state.selected === r.name);
+    el.classList.toggle('visible-now', v.tier === 'visible');
+
+    const nb = el.querySelector('[data-f="nowbadge"]');
+    nb.style.display = v.tier === 'visible' ? '' : 'none';
+
+    const fav = el.querySelector('[data-f="fav"]');
+    fav.classList.toggle('on', !!r.favorite);
+    fav.textContent = r.favorite ? '★' : '☆';
+
+    el.querySelector('[data-f="elev"]').textContent = r.elev.toFixed(0) + '°';
+    el.querySelector('[data-f="az"]').textContent = r.az.toFixed(0) + '°';
+    el.querySelector('[data-f="range"]').textContent = Math.round(r.rangeKm) + 'km';
+    el.querySelector('[data-f="mag"]').textContent = v.magnitude.toFixed(1);
+    el.querySelector('[data-f="sunlit"]').textContent = r.eclipsed ? 'No' : 'Yes';
+    el.querySelector('[data-f="moon"]').textContent = v.moonFactor<0.85 ? 'High' : v.moonFactor<0.97 ? 'Some' : 'Low';
+
+    const fill = el.querySelector('[data-f="conffill"]');
+    fill.style.width = v.score + '%';
+    fill.style.background = confColor(v.score);
+    const label = el.querySelector('[data-f="conflabel"]');
+    label.textContent = v.score + '%';
+    label.style.color = confColor(v.score);
+
+    el.querySelector('[data-f="badgerow"]').innerHTML = `${tierBadge(v)} ${v.reason ? `<span class="small">· ${esc(v.reason)}</span>` : ''}`;
   }
 
   function explainEmpty(){
@@ -271,7 +336,7 @@ const UI = (() => {
 
   function orbitEmoji(type){ return { LEO:'🛰️', MEO:'🧭', GEO:'📡', HEO:'☄️' }[type] || '🛰️'; }
 
-  function satCard(r){
+  function cardHTML(r){
     const v = r.visibility;
     const selected = App.state.selected === r.name ? 'selected' : '';
     const visNow = v.tier === 'visible' ? 'visible-now' : '';
@@ -285,25 +350,25 @@ const UI = (() => {
           </div>
         </div>
         <div class="row" style="gap:6px;">
-          ${v.tier==='visible' ? '<span class="now-badge">VISIBLE NOW</span>' : ''}
-          <button class="fav-btn ${r.favorite?'on':''}" data-fav="${escAttr(r.name)}" aria-label="Toggle favorite">${r.favorite?'★':'☆'}</button>
+          <span class="now-badge" data-f="nowbadge" style="${v.tier==='visible'?'':'display:none;'}">VISIBLE NOW</span>
+          <button class="fav-btn ${r.favorite?'on':''}" data-fav="${escAttr(r.name)}" data-f="fav" aria-label="Toggle favorite">${r.favorite?'★':'☆'}</button>
         </div>
       </div>
 
       <div class="sat-meta-grid">
-        <div class="meta-mini"><div class="l">Elevation</div><div class="v">${r.elev.toFixed(0)}°</div></div>
-        <div class="meta-mini"><div class="l">Azimuth</div><div class="v">${r.az.toFixed(0)}°</div></div>
-        <div class="meta-mini"><div class="l">Distance</div><div class="v">${Math.round(r.rangeKm)}km</div></div>
-        <div class="meta-mini"><div class="l">⭐ Mag (est.)</div><div class="v">${v.magnitude.toFixed(1)}</div></div>
-        <div class="meta-mini"><div class="l">☀ Sunlit</div><div class="v">${r.eclipsed?'No':'Yes'}</div></div>
-        <div class="meta-mini"><div class="l">🌙 Moon impact</div><div class="v">${v.moonFactor<0.85?'High':v.moonFactor<0.97?'Some':'Low'}</div></div>
+        <div class="meta-mini"><div class="l">Elevation</div><div class="v" data-f="elev">${r.elev.toFixed(0)}°</div></div>
+        <div class="meta-mini"><div class="l">Azimuth</div><div class="v" data-f="az">${r.az.toFixed(0)}°</div></div>
+        <div class="meta-mini"><div class="l">Distance</div><div class="v" data-f="range">${Math.round(r.rangeKm)}km</div></div>
+        <div class="meta-mini"><div class="l">⭐ Mag (est.)</div><div class="v" data-f="mag">${v.magnitude.toFixed(1)}</div></div>
+        <div class="meta-mini"><div class="l">☀ Sunlit</div><div class="v" data-f="sunlit">${r.eclipsed?'No':'Yes'}</div></div>
+        <div class="meta-mini"><div class="l">🌙 Moon impact</div><div class="v" data-f="moon">${v.moonFactor<0.85?'High':v.moonFactor<0.97?'Some':'Low'}</div></div>
       </div>
 
       <div class="sat-conf">
-        <div class="conf-bar"><div class="conf-fill" style="width:${v.score}%; background:${confColor(v.score)};"></div></div>
-        <div class="conf-label" style="color:${confColor(v.score)};">${v.score}%</div>
+        <div class="conf-bar"><div class="conf-fill" data-f="conffill" style="width:${v.score}%; background:${confColor(v.score)};"></div></div>
+        <div class="conf-label" data-f="conflabel" style="color:${confColor(v.score)};">${v.score}%</div>
       </div>
-      <div style="margin-top:8px;">${tierBadge(v)} ${v.reason ? `<span class="small">· ${esc(v.reason)}</span>` : ''}</div>
+      <div style="margin-top:8px;" data-f="badgerow">${tierBadge(v)} ${v.reason ? `<span class="small">· ${esc(v.reason)}</span>` : ''}</div>
 
       <div class="sat-actions">
         <button class="btn ghost sm" data-track="${escAttr(r.name)}">🎯 Track</button>
@@ -378,6 +443,11 @@ const UI = (() => {
     $('zoomOut').addEventListener('click', () => { skyplotView.zoom = Math.max(0.7, skyplotView.zoom/1.2); drawSkyplot(App.state.results); });
     $('zoomReset').addEventListener('click', () => { skyplotView.zoom = 1; drawSkyplot(App.state.results); });
 
+    $('fullscreenBtn').addEventListener('click', () => toggleSkyplotFullscreen());
+    window.addEventListener('resize', () => {
+      if(wrap.classList.contains('maximized')) applySkyplotResolution(true);
+    });
+
     function handleTap(e){
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width/rect.width, scaleY = canvas.height/rect.height;
@@ -402,6 +472,25 @@ const UI = (() => {
 
   let lastPlotPoints = [];
   let plotPulse = 0;
+  let skyplotBaseRes = 600;
+  function applySkyplotResolution(maximized){
+    const canvas = $('skyplot');
+    const targetRes = maximized
+      ? Math.round(Math.min(window.innerWidth, window.innerHeight) * 0.92 * (window.devicePixelRatio || 1))
+      : skyplotBaseRes;
+    canvas.width = targetRes; canvas.height = targetRes;
+    drawSkyplot(App.state.results);
+  }
+  function toggleSkyplotFullscreen(forceOff){
+    const wrap = $('skyplotWrap'), btn = $('fullscreenBtn');
+    const goingFullscreen = forceOff ? false : !wrap.classList.contains('maximized');
+    wrap.classList.toggle('maximized', goingFullscreen);
+    document.body.classList.toggle('skyplot-locked', goingFullscreen);
+    btn.textContent = goingFullscreen ? '⤢' : '⛶';
+    btn.setAttribute('aria-label', goingFullscreen ? 'Exit fullscreen' : 'Fullscreen sky plot');
+    applySkyplotResolution(goingFullscreen);
+  }
+
   function drawSkyplot(results){
     const canvas = $('skyplot'); if(!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -481,7 +570,7 @@ const UI = (() => {
   $('paletteOverlay').addEventListener('click', e => { if(e.target.id==='paletteOverlay') closePalette(); });
   document.addEventListener('keydown', e => {
     if(e.key === '/' && document.activeElement.tagName !== 'INPUT'){ e.preventDefault(); openPalette(); }
-    if(e.key === 'Escape'){ closePalette(); $('settingsOverlay').classList.remove('open'); $('detailsOverlay').classList.remove('open'); closePointMe(); if($('arView').classList.contains('open')) AR.close(); }
+    if(e.key === 'Escape'){ closePalette(); $('settingsOverlay').classList.remove('open'); $('detailsOverlay').classList.remove('open'); closePointMe(); if($('arView').classList.contains('open')) AR.close(); if($('skyplotWrap').classList.contains('maximized')) toggleSkyplotFullscreen(true); }
   });
   $('paletteInput').addEventListener('input', e => renderPaletteResults(e.target.value));
   function renderPaletteResults(q){
