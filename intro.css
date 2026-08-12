@@ -1,0 +1,222 @@
+/* ============================================================
+   OVERHEAD — Intro scene sequence
+   A fixed-overlay, JS-driven "scene machine" (not real scroll
+   position math). Transitions use transform + opacity ONLY, per
+   spec, so this stays smooth on low-end mobile.
+   ============================================================ */
+
+.intro-scenes{
+  position:fixed; inset:0; z-index:500;
+  background:var(--bg);
+  overflow:hidden;
+  --intro-ease: cubic-bezier(0.16, 1, 0.3, 1); /* expo-out, as specified */
+  --intro-dur: 750ms;
+}
+.intro-scenes.intro-hidden{ display:none; }
+body.intro-lock{ overflow:hidden; height:100vh; height:100dvh; }
+
+.intro-starfield{ position:absolute; inset:0; z-index:0; }
+.intro-aurora{
+  position:absolute; inset:-20%; z-index:0; opacity:0.6; pointer-events:none;
+  background:
+    radial-gradient(35% 30% at 25% 20%, rgba(94,234,212,0.14), transparent 60%),
+    radial-gradient(30% 28% at 80% 75%, rgba(94,234,212,0.08), transparent 60%);
+  filter:blur(50px);
+}
+
+/* ---------- scene track: absolutely-stacked scenes, one visible at a time ---------- */
+.intro-track{ position:relative; width:100%; height:100%; z-index:1; }
+
+.intro-scene{
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding:32px 24px;
+  opacity:0; pointer-events:none;
+  transform:scale(0.92);
+  transition:opacity var(--intro-dur) var(--intro-ease), transform var(--intro-dur) var(--intro-ease);
+  will-change:auto;
+}
+.intro-scene.is-active{
+  opacity:1; pointer-events:auto; transform:scale(1);
+  will-change:transform, opacity;
+}
+/* a scene we just moved forward FROM zooms up and out, per spec ("zooms/scales") */
+.intro-scene.is-prev{ opacity:0; transform:scale(1.08); }
+/* a scene waiting further down the sequence starts slightly small/faded */
+.intro-scene.is-next{ opacity:0; transform:scale(0.92); }
+
+/* cascading staggered reveal of headline/sub/cta — each element fades+lifts in
+   with its own delay, only applied while the PARENT scene is active */
+.intro-scene .intro-visual,
+.intro-scene .intro-headline,
+.intro-scene .intro-sub,
+.intro-scene .intro-cta{
+  opacity:0; transform:translateY(16px);
+  transition:opacity 550ms var(--intro-ease), transform 550ms var(--intro-ease);
+}
+.intro-scene.is-active .intro-visual{ opacity:1; transform:translateY(0); transition-delay:0ms; }
+.intro-scene.is-active .intro-headline{ opacity:1; transform:translateY(0); transition-delay:90ms; }
+.intro-scene.is-active .intro-sub{ opacity:1; transform:translateY(0); transition-delay:170ms; }
+.intro-scene.is-active .intro-cta{ opacity:1; transform:translateY(0); transition-delay:250ms; }
+
+.intro-headline{
+  font-family:'Inter', sans-serif; font-weight:900; letter-spacing:-0.02em;
+  font-size:clamp(30px, 8vw, 56px); color:var(--text); margin:20px 0 10px;
+  text-shadow:0 0 40px rgba(94,234,212,0.25);
+}
+.intro-sub{
+  font-size:clamp(14px, 3vw, 17px); color:var(--text-dim); max-width:440px; line-height:1.6;
+  margin-bottom:24px;
+}
+.intro-cta{ font-size:14px; padding:15px 30px; }
+
+/* ---------- centerpiece "glowing orbital" visual (CSS-only, no assets) ---------- */
+.intro-visual{
+  position:relative; width:clamp(160px, 42vw, 300px); aspect-ratio:1;
+  display:flex; align-items:center; justify-content:center;
+}
+.intro-visual::before{ /* core glow */
+  content:''; position:absolute; inset:18%; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, rgba(94,234,212,0.55), rgba(94,234,212,0.05) 60%, transparent 75%);
+  box-shadow:0 0 80px rgba(94,234,212,0.35), inset 0 0 40px rgba(94,234,212,0.2);
+  animation:introPulse 4s ease-in-out infinite;
+}
+.intro-visual::after{ /* rotating ring */
+  content:''; position:absolute; inset:0; border-radius:50%;
+  background:conic-gradient(from 0deg, rgba(94,234,212,0) 0%, rgba(94,234,212,0.55) 12%, rgba(94,234,212,0) 28%, rgba(251,191,36,0.35) 55%, rgba(94,234,212,0) 72%);
+  -webkit-mask:radial-gradient(circle, transparent 62%, black 63%, black 68%, transparent 69%);
+          mask:radial-gradient(circle, transparent 62%, black 63%, black 68%, transparent 69%);
+  animation:introSpin 14s linear infinite;
+}
+@keyframes introPulse{ 0%,100%{ transform:scale(1); opacity:0.9; } 50%{ transform:scale(1.04); opacity:1; } }
+@keyframes introSpin{ to{ transform:rotate(360deg); } }
+
+.intro-orbit-dot{
+  position:absolute; width:9px; height:9px; border-radius:50%; background:var(--primary);
+  box-shadow:0 0 12px rgba(94,234,212,0.9);
+  top:50%; left:50%; margin:-4.5px;
+  animation:introOrbit linear infinite;
+}
+.intro-orbit-dot.d2{ background:var(--accent); box-shadow:0 0 12px rgba(251,191,36,0.9); width:6px; height:6px; margin:-3px; }
+@keyframes introOrbit{ from{ transform:rotate(0deg) translateX(var(--orbit-r)) rotate(0deg); } to{ transform:rotate(360deg) translateX(var(--orbit-r)) rotate(-360deg); } }
+
+/* scene-specific visual variants, all still using the same base above */
+.visual-skyplot::before{ background:radial-gradient(circle at 40% 35%, rgba(94,234,212,0.4), transparent 65%); }
+.visual-skyplot .intro-ring-static{ position:absolute; border:1px solid rgba(148,163,184,0.35); border-radius:50%; }
+
+.visual-compass::after{ animation-duration:9s; }
+.visual-compass .intro-needle{
+  position:absolute; left:50%; top:50%; width:3px; height:38%; margin-left:-1.5px; margin-top:-38%;
+  background:linear-gradient(180deg, var(--danger), transparent 65%); transform-origin:50% 100%;
+  animation:introNeedle 6s ease-in-out infinite;
+}
+@keyframes introNeedle{ 0%,100%{ transform:rotate(-18deg); } 50%{ transform:rotate(22deg); } }
+
+.visual-catalog{ display:flex; flex-direction:column; gap:10px; align-items:center; justify-content:center; }
+.visual-catalog::before, .visual-catalog::after{ content:none; }
+.intro-card-stack{ position:relative; width:70%; height:70%; }
+.intro-card-stack .stack-card{
+  position:absolute; inset:0; border-radius:16px; border:1px solid var(--border);
+  background:linear-gradient(160deg, rgba(94,234,212,0.12), rgba(18,24,38,0.6));
+  box-shadow:0 12px 30px rgba(0,0,0,0.4);
+}
+.intro-card-stack .stack-card:nth-child(1){ transform:rotate(-7deg) translateY(6px); opacity:0.6; }
+.intro-card-stack .stack-card:nth-child(2){ transform:rotate(4deg) translateY(2px); opacity:0.8; }
+.intro-card-stack .stack-card:nth-child(3){ transform:rotate(-1deg); border-color:rgba(94,234,212,0.4); }
+
+.visual-cta::before{ animation-duration:2.4s; }
+.intro-check{ font-size:clamp(48px,10vw,72px); color:var(--primary); text-shadow:0 0 30px rgba(94,234,212,0.7); }
+
+/* ---------- chevron hint ---------- */
+.intro-chevron{
+  position:absolute; bottom:calc(90px + env(safe-area-inset-bottom));
+  font-size:26px; color:var(--text-dim);
+  animation:introBounce 1.8s ease-in-out infinite;
+  opacity:0.7;
+}
+@keyframes introBounce{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(8px); } }
+
+/* ---------- side prev/next labels ---------- */
+.intro-side-label{
+  position:fixed; z-index:520; top:50%; transform:translateY(-50%);
+  font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:2px; text-transform:uppercase;
+  color:var(--text-dim); opacity:0.55; writing-mode:vertical-rl;
+  transition:opacity 300ms var(--intro-ease);
+}
+.intro-side-label.prev{ left:18px; }
+.intro-side-label.next{ right:18px; transform:translateY(-50%) rotate(180deg); }
+.intro-side-label.is-empty{ opacity:0; }
+
+/* ---------- progress dots (desktop) ---------- */
+.intro-dots{
+  position:fixed; z-index:520; right:28px; top:50%; transform:translateY(-50%);
+  display:flex; flex-direction:column; gap:14px;
+}
+.intro-dot{
+  width:8px; height:8px; border-radius:50%; border:1px solid var(--text-dim); background:transparent;
+  padding:0; cursor:pointer; transition:all 300ms var(--intro-ease);
+}
+.intro-dot.is-current{ background:var(--primary); border-color:var(--primary); box-shadow:0 0 10px rgba(94,234,212,0.7); transform:scale(1.3); }
+
+/* ---------- mobile slim progress bar ---------- */
+.intro-progressbar{
+  display:none; position:fixed; z-index:520; left:16px; right:16px;
+  top:calc(12px + env(safe-area-inset-top)); height:3px; border-radius:3px; background:rgba(255,255,255,0.1);
+}
+.intro-progressbar-fill{
+  height:100%; border-radius:3px; background:linear-gradient(90deg, var(--primary), var(--accent));
+  transition:width 400ms var(--intro-ease);
+}
+
+/* ---------- up/down nav buttons ---------- */
+.intro-nav-buttons{
+  position:fixed; z-index:520; right:24px; bottom:calc(24px + env(safe-area-inset-bottom));
+  display:flex; flex-direction:column; gap:10px;
+}
+.intro-nav-btn{
+  width:48px; height:48px; border-radius:50%; display:grid; place-items:center;
+  background:rgba(94,234,212,0.1); border:1px solid rgba(94,234,212,0.35); color:var(--primary);
+  font-size:16px; cursor:pointer; transition:all 200ms var(--intro-ease);
+}
+.intro-nav-btn:hover{ background:rgba(94,234,212,0.2); box-shadow:var(--glow-cyan); }
+.intro-nav-btn:disabled{ opacity:0.25; cursor:default; box-shadow:none; }
+.intro-nav-btn:active:not(:disabled){ transform:scale(0.9); }
+
+/* ---------- skip button ---------- */
+.intro-skip{
+  position:fixed; z-index:520; top:calc(20px + env(safe-area-inset-top)); right:24px;
+  font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--text-dim);
+  background:transparent; border:1px solid var(--border); border-radius:20px; padding:8px 14px; cursor:pointer;
+}
+.intro-skip:hover{ color:var(--text); border-color:var(--primary); }
+
+/* ---------- responsive ---------- */
+@media (max-width:720px){
+  .intro-dots{ display:none; }
+  .intro-progressbar{ display:block; }
+  .intro-side-label{ display:none; } /* no room on small viewports; progress bar covers this role */
+  .intro-nav-buttons{
+    left:50%; right:auto; transform:translateX(-50%); flex-direction:column;
+    bottom:calc(28px + env(safe-area-inset-bottom));
+  }
+  .intro-chevron{ bottom:calc(96px + env(safe-area-inset-bottom)); }
+}
+
+/* landscape mobile: shrink the hero visual so text stays above the fold */
+@media (max-height:480px) and (orientation:landscape){
+  .intro-visual{ width:clamp(90px, 22vh, 160px); margin-bottom:4px; }
+  .intro-headline{ font-size:clamp(22px, 5vh, 34px); margin:8px 0 4px; }
+  .intro-sub{ font-size:12.5px; margin-bottom:12px; -webkit-line-clamp:2; }
+  .intro-scene{ padding:12px 24px; }
+  .intro-chevron{ display:none; }
+}
+
+/* ---------- reduced motion: simple crossfade, no scale/parallax/rotation ---------- */
+@media (prefers-reduced-motion: reduce){
+  .intro-scene{ transition:opacity 250ms linear; transform:none !important; }
+  .intro-scene.is-prev, .intro-scene.is-next{ transform:none; }
+  .intro-scene .intro-visual, .intro-scene .intro-headline, .intro-scene .intro-sub, .intro-scene .intro-cta{
+    transition:opacity 250ms linear; transform:none !important; transition-delay:0ms !important;
+  }
+  .intro-visual::before, .intro-visual::after, .intro-orbit-dot, .intro-needle, .intro-chevron{ animation:none !important; }
+}
