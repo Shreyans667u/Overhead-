@@ -1,11 +1,11 @@
 // Bump this on every deploy that changes any shell file. Changing this string
 // changes the byte content of this script, which is what makes browsers
 // notice a new service worker exists and actually install it.
-const CACHE = 'overhead-v5';
+const CACHE = 'overhead-v6';
 const SHELL = [
   './', './index.html', './styles.css', './intro.css', './visibility.js', './app.js',
   './compass.js', './ar.js', './ui.js', './intro.js', './manifest.json', './icon.svg',
-  './icon-192.png', './icon-512.png'
+  './icon-192.png', './icon-512.png', './privacy.html', './terms.html'
 ];
 
 self.addEventListener('install', event => {

@@ -5,8 +5,7 @@ it tells you what's overhead, whether you can actually see it with your
 eyes, and which direction to look. Runs entirely as static files — no
 backend, no build step, deploys straight to GitHub Pages.
 
-**[Live demo →](https://YOUR-USERNAME.github.io/YOUR-REPO/)** *(update this
-link once published)*
+**[Live demo →](https://shreyans667u.github.io/Overhead-/)**
 
 <!--
   Screenshots: add 2–4 images here before publishing, e.g.
@@ -47,8 +46,8 @@ No build tools, no `npm install` — it's plain HTML/CSS/JS.
 
 **To run locally:**
 ```bash
-git clone https://github.com/YOUR-USERNAME/YOUR-REPO.git
-cd YOUR-REPO
+git clone https://github.com/shreyans667u/Overhead-.git
+cd Overhead-
 python3 -m http.server 8000
 # open http://localhost:8000
 ```
@@ -61,7 +60,7 @@ even locally.)
    subfolder — see *Project-page paths* below).
 2. Repo → **Settings → Pages → Source → Deploy from a branch** → `main` /
    `/ (root)` → Save.
-3. Your app is live at `https://YOUR-USERNAME.github.io/YOUR-REPO/` within
+3. Your app is live at `https://shreyans667u.github.io/Overhead-/` within
    a minute or two. GitHub Pages serves everything over HTTPS
    automatically, which is required for geolocation, camera, and
    notifications to work at all.
@@ -75,6 +74,27 @@ etc.) specifically so it works unmodified at any subpath — don't change
 any of them to root-absolute (`/styles.css`) or it'll break under a
 project page.
 
+### Connecting a custom domain
+
+This part needs your own domain and DNS access — nothing here can do it
+for you.
+
+1. Buy/own a domain (or subdomain) you want to use.
+2. At your DNS provider, add one of:
+   - **Apex domain** (`example.com`): four `A` records pointing to
+     `185.199.108.153`, `185.199.109.153`, `185.199.110.153`,
+     `185.199.111.153`.
+   - **Subdomain** (`sky.example.com`): a `CNAME` record pointing to
+     `YOUR-USERNAME.github.io`.
+3. In the repo: **Settings → Pages → Custom domain**, enter your domain,
+   save. GitHub creates a `CNAME` file in your repo automatically. Don't
+   hand-write one with a placeholder domain yourself, since GitHub Pages
+   will then try to actually serve that literal value.
+4. Wait for DNS to propagate (minutes to a few hours), then check
+   **Enforce HTTPS** in the same Pages settings once GitHub shows the
+   certificate as issued. Geolocation, camera, and notifications all
+   require HTTPS, so don't skip this step.
+
 ## Files
 
 ```
@@ -87,6 +107,8 @@ ar.js           camera AR overlay
 ui.js           all rendering/interaction — cards, sky plot, guidance, palette
 manifest.json   PWA manifest
 sw.js           network-first service worker (offline fallback only)
+privacy.html    privacy policy (template — fill in date/contact before launch)
+terms.html      terms of use (template — fill in date/contact before launch)
 icon.svg, icon-192.png, icon-512.png    app icons
 ```
 

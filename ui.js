@@ -444,6 +444,7 @@ const UI = (() => {
     $('zoomReset').addEventListener('click', () => { skyplotView.zoom = 1; drawSkyplot(App.state.results); });
 
     $('fullscreenBtn').addEventListener('click', () => toggleSkyplotFullscreen());
+    $('skyplotCloseBtn').addEventListener('click', () => toggleSkyplotFullscreen(true));
     window.addEventListener('resize', () => {
       if(wrap.classList.contains('maximized')) applySkyplotResolution(true);
     });
@@ -472,23 +473,44 @@ const UI = (() => {
 
   let lastPlotPoints = [];
   let plotPulse = 0;
+  let sweepAngle = 0;
   let skyplotBaseRes = 600;
+  let skyplotHomeParent = null, skyplotHomeNext = null; // where the wrap lives when NOT fullscreen
+
   function applySkyplotResolution(maximized){
     const canvas = $('skyplot');
     const targetRes = maximized
-      ? Math.round(Math.min(window.innerWidth, window.innerHeight) * 0.92 * (window.devicePixelRatio || 1))
+      ? Math.round(Math.min(window.innerWidth, window.innerHeight) * (window.devicePixelRatio || 1))
       : skyplotBaseRes;
     canvas.width = targetRes; canvas.height = targetRes;
     drawSkyplot(App.state.results);
   }
+
   function toggleSkyplotFullscreen(forceOff){
-    const wrap = $('skyplotWrap'), btn = $('fullscreenBtn');
+    const wrap = $('skyplotWrap'), btn = $('fullscreenBtn'), closeBtn = $('skyplotCloseBtn');
     const goingFullscreen = forceOff ? false : !wrap.classList.contains('maximized');
+
+    if(goingFullscreen){
+      // Remember exactly where this element lives so we can put it back.
+      // It has to be MOVED (not just position:fixed in place) because an
+      // ancestor card uses backdrop-filter, which per spec makes that
+      // ancestor a containing block for fixed-position children — so
+      // "fullscreen" was silently getting trapped inside the card instead
+      // of covering the viewport. Reparenting to <body> sidesteps that.
+      skyplotHomeParent = wrap.parentElement;
+      skyplotHomeNext = wrap.nextElementSibling;
+      document.body.appendChild(wrap);
+    }
+
     wrap.classList.toggle('maximized', goingFullscreen);
     document.body.classList.toggle('skyplot-locked', goingFullscreen);
-    btn.textContent = goingFullscreen ? '⤢' : '⛶';
     btn.setAttribute('aria-label', goingFullscreen ? 'Exit fullscreen' : 'Fullscreen sky plot');
+    closeBtn.style.display = goingFullscreen ? 'grid' : 'none';
     applySkyplotResolution(goingFullscreen);
+
+    if(!goingFullscreen && skyplotHomeParent){
+      skyplotHomeParent.insertBefore(wrap, skyplotHomeNext);
+    }
   }
 
   function drawSkyplot(results){
@@ -497,7 +519,9 @@ const UI = (() => {
     const W=canvas.width, H=canvas.height;
     const cx = W/2, cy = H/2;
     const R = W*0.4*skyplotView.zoom;
+    const s = W/600; // scale factor so detail stays proportional at the higher fullscreen resolution
     plotPulse += 0.06;
+    sweepAngle = (sweepAngle + 0.35) % 360;
 
     ctx.clearRect(0,0,W,H);
 
@@ -508,32 +532,65 @@ const UI = (() => {
     ctx.fillStyle = vg;
     ctx.fillRect(0,0,W,H);
 
-    // elevation rings, finer + tick labels
-    ctx.lineWidth = 1;
-    [0,30,60].forEach(elev => {
+    // slow rotating radar sweep wedge — atmosphere, not functional
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx,cy,R,0,Math.PI*2);
+    ctx.clip();
+    const sweepRad = (sweepAngle-90)*Math.PI/180;
+    const sweepGrad = ctx.createConicGradient ? ctx.createConicGradient(sweepRad, cx, cy) : null;
+    if(sweepGrad){
+      sweepGrad.addColorStop(0, 'rgba(94,234,212,0.16)');
+      sweepGrad.addColorStop(0.06, 'rgba(94,234,212,0)');
+      sweepGrad.addColorStop(1, 'rgba(94,234,212,0)');
+      ctx.fillStyle = sweepGrad;
+      ctx.fillRect(cx-R, cy-R, R*2, R*2);
+    }
+    ctx.restore();
+
+    // fine degree tick marks around the rim (every 10°, longer every 30°)
+    for(let deg=0; deg<360; deg+=10){
+      const rad=(deg-90)*Math.PI/180;
+      const isMajor = deg % 30 === 0;
+      const tickLen = (isMajor ? 10 : 5) * s;
+      const x1 = cx+R*Math.cos(rad), y1 = cy+R*Math.sin(rad);
+      const x2 = cx+(R+tickLen)*Math.cos(rad), y2 = cy+(R+tickLen)*Math.sin(rad);
+      ctx.strokeStyle = isMajor ? 'rgba(148,163,184,0.5)' : 'rgba(148,163,184,0.22)';
+      ctx.lineWidth = (isMajor ? 1.5 : 1) * s;
+      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    }
+
+    // elevation rings (major at 30/60, minor at 15/45/75) + tick labels
+    ctx.lineWidth = 1*s;
+    [15,30,45,60,75].forEach(elev => {
       const r=R*(1-elev/90);
-      ctx.strokeStyle = elev===0 ? 'rgba(94,234,212,0.3)' : 'rgba(255,255,255,0.08)';
+      const major = elev % 30 === 0;
+      ctx.strokeStyle = major ? 'rgba(255,255,255,0.09)' : 'rgba(255,255,255,0.045)';
       ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke();
-      if(elev>0){
-        ctx.fillStyle='rgba(148,163,184,0.55)'; ctx.font='500 9px "IBM Plex Mono", monospace';
+      if(major){
+        ctx.fillStyle='rgba(148,163,184,0.55)'; ctx.font=`500 ${9*s}px "IBM Plex Mono", monospace`;
         ctx.textAlign='left'; ctx.textBaseline='middle';
-        ctx.fillText(elev+'°', cx+4, cy-r+2);
+        ctx.fillText(elev+'°', cx+4*s, cy-r+2*s);
       }
     });
+    ctx.strokeStyle = 'rgba(94,234,212,0.3)'; ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.stroke();
 
-    // cardinal spokes + labels
-    ctx.font='700 14px Inter, sans-serif'; ctx.fillStyle='#CBD5E1'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    [['N',0],['E',90],['S',180],['W',270]].forEach(([label,az]) => {
+    // cardinal + intercardinal spokes/labels
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    [['N',0,true],['NE',45,false],['E',90,true],['SE',135,false],['S',180,true],['SW',225,false],['W',270,true],['NW',315,false]].forEach(([label,az,major]) => {
       const rad=(az-90)*Math.PI/180;
-      ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.lineWidth=1;
+      ctx.strokeStyle='rgba(255,255,255,0.045)'; ctx.lineWidth=1*s;
       ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+R*Math.cos(rad), cy+R*Math.sin(rad)); ctx.stroke();
-      ctx.fillText(label, cx+(R+20)*Math.cos(rad), cy+(R+20)*Math.sin(rad));
+      ctx.font = major ? `700 ${14*s}px Inter, sans-serif` : `600 ${10.5*s}px Inter, sans-serif`;
+      ctx.fillStyle = major ? '#CBD5E1' : 'rgba(148,163,184,0.65)';
+      const labelR = R + (major ? 20 : 15)*s;
+      ctx.fillText(label, cx+labelR*Math.cos(rad), cy+labelR*Math.sin(rad));
     });
 
     // device heading arrow (if compass active)
     if(Compass.state.heading !== null){
       const rad=(Compass.state.heading-90)*Math.PI/180;
-      ctx.strokeStyle='rgba(251,191,36,0.75)'; ctx.lineWidth=2;
+      ctx.strokeStyle='rgba(251,191,36,0.75)'; ctx.lineWidth=2*s;
       ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+R*Math.cos(rad), cy+R*Math.sin(rad)); ctx.stroke();
     }
 
@@ -545,22 +602,25 @@ const UI = (() => {
       const isVisible = r.visibility.tier==='visible';
       const isSelected = App.state.selected === r.name;
       const color = isVisible ? '#22C55E' : (r.visibility.tier==='binoculars' ? '#FBBF24' : '#5EEAD4');
+      // brighter (lower magnitude) objects render as slightly bigger dots
+      const magBoost = r.visibility.magnitude <= 0 ? 2 : r.visibility.magnitude <= 3 ? 1 : 0;
+      const baseR = (isSelected ? 7 : (isVisible ? 6 : 4)) + magBoost;
 
       ctx.beginPath();
       ctx.fillStyle = color;
-      ctx.shadowColor = color; ctx.shadowBlur = isVisible ? 18 : 7;
+      ctx.shadowColor = color; ctx.shadowBlur = (isVisible ? 18 : 7) * s;
       ctx.globalAlpha = isVisible ? 1 : 0.75;
-      ctx.arc(px,py, isSelected?7:(isVisible?6:4), 0, Math.PI*2); ctx.fill();
+      ctx.arc(px,py, baseR*s, 0, Math.PI*2); ctx.fill();
       ctx.shadowBlur=0; ctx.globalAlpha=1;
 
       if(isSelected){
-        const pulseR = 12 + Math.sin(plotPulse)*2.5;
-        ctx.strokeStyle = 'rgba(248,250,252,0.9)'; ctx.lineWidth = 1.5;
+        const pulseR = (12 + Math.sin(plotPulse)*2.5) * s;
+        ctx.strokeStyle = 'rgba(248,250,252,0.9)'; ctx.lineWidth = 1.5*s;
         ctx.beginPath(); ctx.arc(px,py,pulseR,0,Math.PI*2); ctx.stroke();
       }
       lastPlotPoints.push({x:px,y:py,r});
     }
-    ctx.fillStyle='#FBBF24'; ctx.beginPath(); ctx.arc(cx,cy,2.5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#FBBF24'; ctx.beginPath(); ctx.arc(cx,cy,2.5*s,0,Math.PI*2); ctx.fill();
   }
 
   // ================= command palette (search) =================

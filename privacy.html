@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy — Overhead</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .legal{ max-width:760px; margin:0 auto; padding:48px 24px 80px; }
+  .legal h1{ font-size:28px; margin-bottom:8px; }
+  .legal .updated{ color:var(--text-dim); font-size:13px; margin-bottom:32px; }
+  .legal h2{ font-size:18px; margin:32px 0 12px; }
+  .legal p, .legal li{ color:var(--text-dim); line-height:1.7; font-size:14.5px; }
+  .legal ul{ padding-left:20px; margin:8px 0; }
+  .legal a{ color:var(--primary); }
+  .legal .back{ display:inline-block; margin-bottom:24px; font-size:13px; }
+  .legal .notice{
+    border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:28px;
+    background:rgba(255,255,255,0.03); font-size:13px; color:var(--text-dim);
+  }
+</style>
+</head>
+<body>
+<canvas id="starfield" aria-hidden="true"></canvas>
+<div class="aurora" aria-hidden="true"></div>
+<main class="legal">
+  <a class="back" href="./index.html">&larr; Back to Overhead</a>
+  <h1>Privacy Policy</h1>
+  <p class="updated">Last updated: [DATE — fill in before publishing]</p>
+
+  <div class="notice">
+    This is a plain-language description of what this app actually does with data, written by the developer, not a lawyer. If Overhead is used by people in a jurisdiction with specific disclosure requirements (GDPR, CCPA, or similar), have this reviewed before relying on it as your only privacy documentation.
+  </div>
+
+  <h2>What this app collects</h2>
+  <ul>
+    <li><strong>Location.</strong> Your device's GPS coordinates, used only to calculate satellite positions and sun/moon angles relative to where you are. Location is requested directly by your browser, processed in your browser, and is not sent to any server operated by this project.</li>
+    <li><strong>Compass and motion data</strong> (if you enable the compass, Point Me, or AR features). Used only to determine which direction your device is facing, processed entirely on your device.</li>
+    <li><strong>Camera access</strong> (only if you open AR mode). The camera feed is displayed on your screen and is not recorded, stored, or transmitted anywhere.</li>
+    <li><strong>Local preferences.</strong> Favorited satellites, sound and theme settings, and compass calibration are stored in your browser's local storage, on your device only.</li>
+  </ul>
+
+  <h2>What gets sent to third parties</h2>
+  <p>To function, this app makes requests to two external services, using your approximate or exact location as an input:</p>
+  <ul>
+    <li><strong>CelesTrak</strong> — to fetch current satellite orbital data (no location is sent for this request).</li>
+    <li><strong>Open-Meteo</strong> — to fetch current cloud cover for your coordinates (your latitude and longitude are sent as part of this request, the same way any weather app would).</li>
+  </ul>
+  <p>Each of these providers has its own policies governing requests made to it. This app does not run its own backend server and does not store, log, or resell your location.</p>
+
+  <h2>What this app does not do</h2>
+  <ul>
+    <li>No account creation, no sign-in, no email collection.</li>
+    <li>No analytics or advertising trackers.</li>
+    <li>No selling or sharing of data with advertisers.</li>
+  </ul>
+
+  <h2>Notifications</h2>
+  <p>If you enable visibility alerts, notifications are generated and shown entirely by your browser, based on calculations done on your device. No notification content is sent through an external push service operated by this project.</p>
+
+  <h2>Contact</h2>
+  <p>Questions about this policy: [YOUR CONTACT EMAIL — fill in before publishing]</p>
+</main>
+</body>
+</html>

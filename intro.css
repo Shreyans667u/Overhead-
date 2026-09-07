@@ -33,17 +33,26 @@ body.intro-lock{ overflow:hidden; height:100vh; height:100dvh; }
   text-align:center; padding:32px 24px;
   opacity:0; pointer-events:none;
   transform:scale(0.92);
-  transition:opacity var(--intro-dur) var(--intro-ease), transform var(--intro-dur) var(--intro-ease);
+  filter:blur(0px);
+  transition:opacity var(--intro-dur) var(--intro-ease), transform var(--intro-dur) var(--intro-ease), filter var(--intro-dur) var(--intro-ease);
   will-change:auto;
 }
 .intro-scene.is-active{
-  opacity:1; pointer-events:auto; transform:scale(1);
-  will-change:transform, opacity;
+  opacity:1; pointer-events:auto; transform:scale(1); filter:blur(0px);
+  will-change:transform, opacity, filter;
 }
-/* a scene we just moved forward FROM zooms up and out, per spec ("zooms/scales") */
-.intro-scene.is-prev{ opacity:0; transform:scale(1.08); }
-/* a scene waiting further down the sequence starts slightly small/faded */
-.intro-scene.is-next{ opacity:0; transform:scale(0.92); }
+/* the scene we just left rushes toward the viewer and dissolves into blur —
+   this is the "fly through the planet" feel from the reference, not just a
+   plain fade */
+.intro-scene.is-prev{ opacity:0; transform:scale(1.35); filter:blur(14px); }
+/* a scene waiting further down the sequence starts slightly small/faded, no blur yet */
+.intro-scene.is-next{ opacity:0; transform:scale(0.92); filter:blur(0px); }
+
+/* the centerpiece visual gets an EXTRA zoom on top of the whole-scene scale
+   above, so the planet itself is what dramatically overtakes the frame —
+   text rides along on the calmer whole-scene transform instead of also
+   blowing up to 2x, which would make it unreadable mid-transition */
+.intro-scene.is-prev .intro-visual{ transform:translateY(0) scale(1.9); }
 
 /* cascading staggered reveal of headline/sub/cta — each element fades+lifts in
    with its own delay, only applied while the PARENT scene is active */
@@ -213,8 +222,8 @@ body.intro-lock{ overflow:hidden; height:100vh; height:100dvh; }
 
 /* ---------- reduced motion: simple crossfade, no scale/parallax/rotation ---------- */
 @media (prefers-reduced-motion: reduce){
-  .intro-scene{ transition:opacity 250ms linear; transform:none !important; }
-  .intro-scene.is-prev, .intro-scene.is-next{ transform:none; }
+  .intro-scene{ transition:opacity 250ms linear; transform:none !important; filter:none !important; }
+  .intro-scene.is-prev, .intro-scene.is-next{ transform:none; filter:none; }
   .intro-scene .intro-visual, .intro-scene .intro-headline, .intro-scene .intro-sub, .intro-scene .intro-cta{
     transition:opacity 250ms linear; transform:none !important; transition-delay:0ms !important;
   }

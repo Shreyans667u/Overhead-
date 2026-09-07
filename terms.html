@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terms of Use — Overhead</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .legal{ max-width:760px; margin:0 auto; padding:48px 24px 80px; }
+  .legal h1{ font-size:28px; margin-bottom:8px; }
+  .legal .updated{ color:var(--text-dim); font-size:13px; margin-bottom:32px; }
+  .legal h2{ font-size:18px; margin:32px 0 12px; }
+  .legal p, .legal li{ color:var(--text-dim); line-height:1.7; font-size:14.5px; }
+  .legal ul{ padding-left:20px; margin:8px 0; }
+  .legal a{ color:var(--primary); }
+  .legal .back{ display:inline-block; margin-bottom:24px; font-size:13px; }
+  .legal .notice{
+    border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:28px;
+    background:rgba(255,255,255,0.03); font-size:13px; color:var(--text-dim);
+  }
+</style>
+</head>
+<body>
+<canvas id="starfield" aria-hidden="true"></canvas>
+<div class="aurora" aria-hidden="true"></div>
+<main class="legal">
+  <a class="back" href="./index.html">&larr; Back to Overhead</a>
+  <h1>Terms of Use</h1>
+  <p class="updated">Last updated: [DATE — fill in before publishing]</p>
+
+  <div class="notice">
+    A plain-language starting point, not a substitute for legal review specific to your situation, especially if this app will be used outside a hobby/personal context.
+  </div>
+
+  <h2>What this app is</h2>
+  <p>Overhead is a free tool that estimates satellite visibility using public orbital data (CelesTrak), sun and moon position calculations, and third-party weather data (Open-Meteo). It is provided as-is, with no warranty of any kind.</p>
+
+  <h2>Accuracy</h2>
+  <p>Positions are computed using standard orbital propagation methods, but several figures shown in the app are estimates, not guarantees, including:</p>
+  <ul>
+    <li>Naked-eye visibility confidence scores and estimated magnitude, which are heuristics, not measured brightness values.</li>
+    <li>AR mode marker placement, which assumes a fixed camera field of view and approximate device orientation.</li>
+    <li>Pass-time predictions, which are short-range forward simulations.</li>
+  </ul>
+  <p>Do not rely on this app for any safety-critical, navigational, or professional astronomical purpose.</p>
+
+  <h2>Acceptable use</h2>
+  <p>Use this app for personal, non-commercial satellite viewing and curiosity. Do not use it to attempt to identify, track, or interfere with the operation of any spacecraft, or in any way that violates the terms of the third-party data providers it relies on.</p>
+
+  <h2>No liability</h2>
+  <p>To the extent permitted by law, the developer of this app is not liable for any damages, losses, or missed observations resulting from use of this app, including inaccurate predictions, missed satellite passes, or reliance on any figure shown.</p>
+
+  <h2>Changes</h2>
+  <p>These terms may be updated as the app changes. Continued use after a change means you accept the current version.</p>
+
+  <h2>Contact</h2>
+  <p>Questions about these terms: [YOUR CONTACT EMAIL — fill in before publishing]</p>
+</main>
+</body>
+</html>

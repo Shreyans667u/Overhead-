@@ -104,7 +104,6 @@ const Intro = (() => {
       root.style.removeProperty('opacity');
       root.style.removeProperty('transition');
       document.body.classList.remove('intro-lock');
-      try{ localStorage.setItem('overhead_intro_seen', '1'); }catch(e){}
       // land the user at the very top of the dashboard, then normal page scroll takes over
       window.scrollTo(0, 0);
       animating = false;
@@ -115,7 +114,6 @@ const Intro = (() => {
     active = false;
     root.classList.add('intro-hidden');
     document.body.classList.remove('intro-lock');
-    try{ localStorage.setItem('overhead_intro_seen', '1'); }catch(e){}
   }
 
   // ---------------- input handlers ----------------
@@ -152,13 +150,10 @@ const Intro = (() => {
     buildDots();
     render();
 
-    const alreadySeen = (() => { try{ return localStorage.getItem('overhead_intro_seen') === '1'; }catch(e){ return false; } })();
-    const isInstalledPwa = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-    if(alreadySeen || isInstalledPwa){
-      root.classList.add('intro-hidden');
-      return; // active stays false — nothing to wire up
-    }
-
+    // Previously this auto-skipped for returning visitors (localStorage flag)
+    // and installed-PWA launches. Removed per explicit request — the intro
+    // now plays every time, no exceptions. The "Skip intro" button still
+    // lets someone bail out of a given viewing without watching all 5 scenes.
     active = true;
     document.body.classList.add('intro-lock');
 

@@ -313,13 +313,18 @@ a{ color:var(--primary); }
 .skyplot-controls{ position:absolute; right:10px; bottom:10px; display:flex; flex-direction:column; gap:6px; }
 .skyplot-controls .icon-btn{ width:36px; height:36px; background:rgba(10,14,22,0.7); }
 .skyplot-wrap.maximized{
-  position:fixed; inset:0; z-index:60; max-width:none; width:100vw; height:100vh; height:100dvh;
+  position:fixed; inset:0; z-index:200; max-width:none; width:100vw; height:100vh; height:100dvh;
   border-radius:0; background:var(--bg);
   display:flex; align-items:center; justify-content:center;
   animation: fadeUp 220ms var(--ease) both;
 }
-.skyplot-wrap.maximized #skyplot{ width:min(92vw,92vh); height:min(92vw,92vh); }
+.skyplot-wrap.maximized #skyplot{ width:min(100vw,100vh); height:min(100vw,100vh); }
 .skyplot-wrap.maximized .skyplot-controls{ right:16px; bottom:calc(16px + env(safe-area-inset-bottom)); }
+.skyplot-wrap.maximized #fullscreenBtn{ display:none; } /* the big ✕ replaces it while maximized */
+#skyplotCloseBtn{
+  position:absolute; top:calc(16px + env(safe-area-inset-top)); right:16px; z-index:201;
+  width:44px; height:44px; background:rgba(10,14,22,0.85);
+}
 body.skyplot-locked{ overflow:hidden; }
 .skyplot-tag{
   position:absolute; left:10px; top:10px; font-size:11px; color:var(--text-dim); font-family:monospace;
