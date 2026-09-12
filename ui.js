@@ -121,11 +121,11 @@ const UI = (() => {
 
   // ================= hero / observer card =================
   App.on('trackingStarted', () => {
-    $('locateBtn').textContent = '🛑 Stop live tracking';
+    $('locateBtn').innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-stop"></use></svg> Stop live tracking';
     $('liveDot').classList.add('live');
   });
   App.on('trackingStopped', () => {
-    $('locateBtn').textContent = '🛰️ Start live tracking';
+    $('locateBtn').innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-satellite"></use></svg> Start live tracking';
     $('liveDot').classList.remove('live');
   });
   App.on('error', msg => { $('locErr').style.display='block'; $('locErr').textContent = msg; toast(msg); });
@@ -168,7 +168,7 @@ const UI = (() => {
     const perm = await Notification.requestPermission();
     if(perm === 'granted'){
       App.state.notifyEnabled = true;
-      $('notifyBtn').textContent = '🔔 Alerts on';
+      $('notifyBtn').innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-bell"></use></svg> Alerts on';
       $('notifyBtn').disabled = true;
       new Notification('Overhead alerts enabled', { body: "You'll be notified the moment a satellite becomes visible.", icon:'icon-192.png' });
     } else {
@@ -176,7 +176,7 @@ const UI = (() => {
     }
   });
 
-  App.on('becameVisible', r => { beep(1046, 0.15); toast(`🛰 ${r.name} just became visible!`); });
+  App.on('becameVisible', r => { beep(1046, 0.15); toast(`${r.name} just became visible!`); });
 
   // ================= scan =================
   $('scanBtn').addEventListener('click', () => {
@@ -184,8 +184,8 @@ const UI = (() => {
     App.scan($('groupSelect').value);
   });
   $('groupSelect').addEventListener('change', e => { if(App.state.tracking) { setBtnLoading($('scanBtn'), true); App.scan(e.target.value); } });
-  App.on('scanDone', () => { setBtnLoading($('scanBtn'), false, 'Scan sky'); });
-  App.on('scanError', msg => { setBtnLoading($('scanBtn'), false, 'Scan sky'); toast('Scan failed: ' + msg); });
+  App.on('scanDone', () => { setBtnLoading($('scanBtn'), false); });
+  App.on('scanError', msg => { setBtnLoading($('scanBtn'), false); toast('Scan failed: ' + msg); });
 
   // ================= stats + list rendering =================
   App.on('frame', results => {
@@ -217,9 +217,9 @@ const UI = (() => {
   });
 
   function tierBadge(v){
-    if(v.tier === 'visible') return `<span class="badge visible">🟢 ${v.label}</span>`;
-    if(v.tier === 'binoculars') return `<span class="badge binoculars">🟡 ${v.label}</span>`;
-    return `<span class="badge notvisible">🔴 ${v.label}</span>`;
+    if(v.tier === 'visible') return `<span class="badge visible"><span class="dot dot-green"></span> ${v.label}</span>`;
+    if(v.tier === 'binoculars') return `<span class="badge binoculars"><span class="dot dot-amber"></span> ${v.label}</span>`;
+    return `<span class="badge notvisible"><span class="dot dot-red"></span> ${v.label}</span>`;
   }
 
   function confColor(pct){
@@ -233,7 +233,7 @@ const UI = (() => {
     const grid = $('satGrid');
     const list = filteredResults();
     if(!App.state.tracking){
-      grid.innerHTML = emptyState('🛰️', 'Not tracking yet', 'Tap "Start live tracking" above to begin.');
+      grid.innerHTML = emptyState('<svg class="icon" aria-hidden="true"><use href="#i-satellite"></use></svg>', 'Not tracking yet', 'Tap "Start live tracking" above to begin.');
       return;
     }
     if(App.state.scanning){
@@ -293,7 +293,7 @@ const UI = (() => {
 
     const fav = el.querySelector('[data-f="fav"]');
     fav.classList.toggle('on', !!r.favorite);
-    fav.textContent = r.favorite ? '★' : '☆';
+    fav.innerHTML = r.favorite ? '<svg class="icon" aria-hidden="true"><use href="#i-star-filled"></use></svg>' : '<svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg>';
 
     el.querySelector('[data-f="elev"]').textContent = r.elev.toFixed(0) + '°';
     el.querySelector('[data-f="az"]').textContent = r.az.toFixed(0) + '°';
@@ -314,18 +314,18 @@ const UI = (() => {
 
   function explainEmpty(){
     const reasons = [];
-    if(!App.state.sats.length) reasons.push(['📡','Run a scan to load the satellite catalog.']);
+    if(!App.state.sats.length) reasons.push(['<svg class="icon" aria-hidden="true"><use href="#i-list"></use></svg>','Run a scan to load the satellite catalog.']);
     else{
       const allEclipsed = App.state.results.length && App.state.results.every(r => r.eclipsed);
-      if(App.state.sunAltDeg !== null && App.state.sunAltDeg > -0.5) reasons.push(['☀️','Sky too bright — full daylight.']);
-      else if(App.state.sunAltDeg !== null && App.state.sunAltDeg > -6) reasons.push(['🌆','Civil twilight — sky not fully dark yet.']);
-      if(allEclipsed) reasons.push(['🌑',"All tracked objects are currently in Earth's shadow."]);
-      if(App.state.cloudPct !== null && App.state.cloudPct >= 70) reasons.push(['☁️', `Heavy cloud cover (${Math.round(App.state.cloudPct)}%).`]);
-      if(!App.state.results.length) reasons.push(['📉','Nothing from this catalog is above your horizon right now.']);
+      if(App.state.sunAltDeg !== null && App.state.sunAltDeg > -0.5) reasons.push(['<svg class="icon" aria-hidden="true"><use href="#i-sun"></use></svg>','Sky too bright: full daylight.']);
+      else if(App.state.sunAltDeg !== null && App.state.sunAltDeg > -6) reasons.push(['<svg class="icon" aria-hidden="true"><use href="#i-cloud-sun"></use></svg>','Civil twilight: sky not fully dark yet.']);
+      if(allEclipsed) reasons.push(['<svg class="icon" aria-hidden="true"><use href="#i-moon"></use></svg>',"All tracked objects are currently in Earth's shadow."]);
+      if(App.state.cloudPct !== null && App.state.cloudPct >= 70) reasons.push(['<svg class="icon" aria-hidden="true"><use href="#i-cloud"></use></svg>', `Heavy cloud cover (${Math.round(App.state.cloudPct)}%).`]);
+      if(!App.state.results.length) reasons.push(['<svg class="icon" aria-hidden="true"><use href="#i-list"></use></svg>','Nothing from this catalog is above your horizon right now.']);
     }
-    if(!reasons.length) reasons.push(['🔎','No objects match the current filter.']);
+    if(!reasons.length) reasons.push(['<svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>','No objects match the current filter.']);
     return `<div class="empty-state">
-      <div class="big">🌌</div><h3>Nothing visible right now</h3>
+      <div class="big"><svg class="icon" aria-hidden="true"><use href="#i-orbit"></use></svg></div><h3>Nothing visible right now</h3>
       <div class="reason-list">${reasons.map(([e,t]) => `<div>${e} ${t}</div>`).join('')}</div>
     </div>`;
   }
@@ -334,7 +334,7 @@ const UI = (() => {
     return `<div class="empty-state"><div class="big">${icon}</div><h3>${title}</h3><p class="small">${sub}</p></div>`;
   }
 
-  function orbitEmoji(type){ return { LEO:'🛰️', MEO:'🧭', GEO:'📡', HEO:'☄️' }[type] || '🛰️'; }
+  function orbitIcon(type){ return { LEO:'<svg class="icon" aria-hidden="true"><use href="#i-satellite"></use></svg>', MEO:'<svg class="icon" aria-hidden="true"><use href="#i-compass"></use></svg>', GEO:'<svg class="icon" aria-hidden="true"><use href="#i-list"></use></svg>', HEO:'<svg class="icon" aria-hidden="true"><use href="#i-comet"></use></svg>' }[type] || '<svg class="icon" aria-hidden="true"><use href="#i-satellite"></use></svg>'; }
 
   function cardHTML(r){
     const v = r.visibility;
@@ -343,7 +343,7 @@ const UI = (() => {
     return `<article class="glass sat-card ${selected} ${visNow}" data-name="${escAttr(r.name)}" tabindex="0" role="button" aria-label="${escAttr(r.name)} details">
       <div class="sat-head">
         <div class="sat-id">
-          <span class="sat-emoji">${orbitEmoji(r.orbit.type)}</span>
+          <span class="sat-icon">${orbitIcon(r.orbit.type)}</span>
           <div style="min-width:0;">
             <div class="sat-name">${esc(r.name)}</div>
             <div class="sat-orbit">${r.orbit.type} · ${Math.round(r.orbit.altKm)} km alt</div>
@@ -351,7 +351,7 @@ const UI = (() => {
         </div>
         <div class="row" style="gap:6px;">
           <span class="now-badge" data-f="nowbadge" style="${v.tier==='visible'?'':'display:none;'}">VISIBLE NOW</span>
-          <button class="fav-btn ${r.favorite?'on':''}" data-fav="${escAttr(r.name)}" data-f="fav" aria-label="Toggle favorite">${r.favorite?'★':'☆'}</button>
+          <button class="fav-btn ${r.favorite?'on':''}" data-fav="${escAttr(r.name)}" data-f="fav" aria-label="Toggle favorite">${r.favorite?'<svg class="icon" aria-hidden="true"><use href="#i-star-filled"></use></svg>':'<svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg>'}</button>
         </div>
       </div>
 
@@ -359,9 +359,9 @@ const UI = (() => {
         <div class="meta-mini"><div class="l">Elevation</div><div class="v" data-f="elev">${r.elev.toFixed(0)}°</div></div>
         <div class="meta-mini"><div class="l">Azimuth</div><div class="v" data-f="az">${r.az.toFixed(0)}°</div></div>
         <div class="meta-mini"><div class="l">Distance</div><div class="v" data-f="range">${Math.round(r.rangeKm)}km</div></div>
-        <div class="meta-mini"><div class="l">⭐ Mag (est.)</div><div class="v" data-f="mag">${v.magnitude.toFixed(1)}</div></div>
-        <div class="meta-mini"><div class="l">☀ Sunlit</div><div class="v" data-f="sunlit">${r.eclipsed?'No':'Yes'}</div></div>
-        <div class="meta-mini"><div class="l">🌙 Moon impact</div><div class="v" data-f="moon">${v.moonFactor<0.85?'High':v.moonFactor<0.97?'Some':'Low'}</div></div>
+        <div class="meta-mini"><div class="l"><svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg> Mag (est.)</div><div class="v" data-f="mag">${v.magnitude.toFixed(1)}</div></div>
+        <div class="meta-mini"><div class="l"><svg class="icon" aria-hidden="true"><use href="#i-sun"></use></svg> Sunlit</div><div class="v" data-f="sunlit">${r.eclipsed?'No':'Yes'}</div></div>
+        <div class="meta-mini"><div class="l"><svg class="icon" aria-hidden="true"><use href="#i-moon"></use></svg> Moon impact</div><div class="v" data-f="moon">${v.moonFactor<0.85?'High':v.moonFactor<0.97?'Some':'Low'}</div></div>
       </div>
 
       <div class="sat-conf">
@@ -371,9 +371,9 @@ const UI = (() => {
       <div style="margin-top:8px;" data-f="badgerow">${tierBadge(v)} ${v.reason ? `<span class="small">· ${esc(v.reason)}</span>` : ''}</div>
 
       <div class="sat-actions">
-        <button class="btn ghost sm" data-track="${escAttr(r.name)}">🎯 Track</button>
-        <button class="btn ghost sm" data-center="${escAttr(r.name)}">⌖ Center</button>
-        <button class="btn ghost sm" data-details="${escAttr(r.name)}">ℹ️ Details</button>
+        <button class="btn ghost sm" data-track="${escAttr(r.name)}"><svg class="icon" aria-hidden="true"><use href="#i-target"></use></svg> Track</button>
+        <button class="btn ghost sm" data-center="${escAttr(r.name)}"><svg class="icon" aria-hidden="true"><use href="#i-crosshair"></use></svg> Center</button>
+        <button class="btn ghost sm" data-details="${escAttr(r.name)}"><svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg> Details</button>
       </div>
     </article>`;
   }
@@ -412,8 +412,8 @@ const UI = (() => {
       ? `Sets in ~${countdown.minutes} min`
       : 'Stays above the horizon for the next 20+ min';
     $('detailsBody').innerHTML = `
-      <div class="row between"><div class="section-title" style="margin:0;">${orbitEmoji(r.orbit.type)} ${esc(r.name)}</div>
-      <button class="icon-btn" onclick="document.getElementById('detailsOverlay').classList.remove('open')">✕</button></div>
+      <div class="row between"><div class="section-title" style="margin:0;">${orbitIcon(r.orbit.type)} ${esc(r.name)}</div>
+      <button class="icon-btn" onclick="document.getElementById('detailsOverlay').classList.remove('open')"><svg class="icon" aria-hidden="true"><use href="#i-x"></use></svg></button></div>
       <div class="sat-meta-grid" style="margin-top:16px; grid-template-columns:repeat(2,1fr);">
         <div class="meta-mini"><div class="l">Orbit type</div><div class="v">${r.orbit.type}</div></div>
         <div class="meta-mini"><div class="l">Altitude</div><div class="v">${Math.round(r.orbit.altKm)} km</div></div>
@@ -421,15 +421,15 @@ const UI = (() => {
         <div class="meta-mini"><div class="l">Azimuth</div><div class="v">${r.az.toFixed(1)}°</div></div>
         <div class="meta-mini"><div class="l">Range</div><div class="v">${Math.round(r.rangeKm)} km</div></div>
         <div class="meta-mini"><div class="l">Est. magnitude</div><div class="v">${v.magnitude.toFixed(2)}</div></div>
-        <div class="meta-mini"><div class="l">Sunlit</div><div class="v">${r.eclipsed?'No — in shadow':'Yes'}</div></div>
+        <div class="meta-mini"><div class="l">Sunlit</div><div class="v">${r.eclipsed?'No, in shadow':'Yes'}</div></div>
         <div class="meta-mini"><div class="l">Confidence</div><div class="v" style="color:${confColor(v.score)};">${v.score}%</div></div>
       </div>
       <div class="row between" style="margin-top:14px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:10px 14px;">
-        <span class="small">⏱ Pass estimate</span><span style="font-weight:700; font-size:13px;">${countdownText}</span>
+        <span class="small"><svg class="icon" aria-hidden="true"><use href="#i-clock"></use></svg> Pass estimate</span><span style="font-weight:700; font-size:13px;">${countdownText}</span>
       </div>
       <div style="margin-top:14px;">${tierBadge(v)}</div>
       <p class="small" style="margin-top:12px; line-height:1.6;">Naked-eye confidence accounts for sun altitude, elevation/extinction, cloud cover, light pollution, moon brightness/proximity, and an estimated apparent magnitude. It's a heuristic guide, not a guarantee. The pass estimate is a short forward simulation (up to 20 min), not a full multi-orbit prediction.</p>
-      <button class="btn full" style="margin-top:16px;" onclick="document.getElementById('detailsOverlay').classList.remove('open'); UI.openPointMeFor('${escAttr(name)}')">🎯 Point me to it</button>
+      <button class="btn full" style="margin-top:16px;" onclick="document.getElementById('detailsOverlay').classList.remove('open'); UI.openPointMeFor('${escAttr(name)}')"><svg class="icon" aria-hidden="true"><use href="#i-target"></use></svg> Point me to it</button>
     `;
     $('detailsOverlay').classList.add('open');
   }
@@ -494,7 +494,7 @@ const UI = (() => {
       // Remember exactly where this element lives so we can put it back.
       // It has to be MOVED (not just position:fixed in place) because an
       // ancestor card uses backdrop-filter, which per spec makes that
-      // ancestor a containing block for fixed-position children — so
+      // ancestor a containing block for fixed-position children - so
       // "fullscreen" was silently getting trapped inside the card instead
       // of covering the viewport. Reparenting to <body> sidesteps that.
       skyplotHomeParent = wrap.parentElement;
@@ -532,7 +532,7 @@ const UI = (() => {
     ctx.fillStyle = vg;
     ctx.fillRect(0,0,W,H);
 
-    // slow rotating radar sweep wedge — atmosphere, not functional
+    // slow rotating radar sweep wedge - atmosphere, not functional
     ctx.save();
     ctx.beginPath();
     ctx.arc(cx,cy,R,0,Math.PI*2);
@@ -649,7 +649,7 @@ const UI = (() => {
   $('bortleSlider').addEventListener('input', e => { App.state.bortle = +e.target.value; $('bortleVal').textContent = e.target.value; if(App.state.sats.length) App.emit('frame', App.state.results); });
   $('calibrateBtn').addEventListener('click', () => {
     const ok = Compass.calibrateTo(0);
-    toast(ok ? 'Calibrated — facing direction set as North.' : 'Enable the compass first, then calibrate.');
+    toast(ok ? 'Calibrated: facing direction set as North.' : 'Enable the compass first, then calibrate.');
   });
 
   // ================= theme + sound toggles (now live in Settings) =================
@@ -703,7 +703,7 @@ const UI = (() => {
     if(heading === null) return;
 
     // Only the ring rotates (to show which cardinal direction is currently
-    // "forward"). The needle stays fixed pointing straight up — it's the
+    // "forward"). The needle stays fixed pointing straight up - it's the
     // "this is forward" reference, not a second thing that also spins.
     if(lastHeadingSeen === null){
       roseRotation = -heading;
@@ -755,14 +755,14 @@ const UI = (() => {
     else if(dist < 45) reticle.classList.add('near');
 
     let statusText;
-    if(locked){ statusText = "🎯 You're on target!"; }
+    if(locked){ statusText = `${ic('target')} You're on target!`; }
     else {
       const parts = [];
-      if(Math.abs(dAz) >= 8) parts.push(dAz > 0 ? `➡ Turn Right ${Math.abs(dAz).toFixed(0)}°` : `⬅ Turn Left ${Math.abs(dAz).toFixed(0)}°`);
-      if(dEl !== null && Math.abs(dEl) >= 8) parts.push(dEl > 0 ? `⬆ Raise phone ${Math.abs(dEl).toFixed(0)}°` : `⬇ Lower phone ${Math.abs(dEl).toFixed(0)}°`);
-      statusText = parts.join(' · ') || 'Almost there…';
+      if(Math.abs(dAz) >= 8) parts.push(dAz > 0 ? `${ic('arrow-right')} Turn Right ${Math.abs(dAz).toFixed(0)}°` : `${ic('arrow-left')} Turn Left ${Math.abs(dAz).toFixed(0)}°`);
+      if(dEl !== null && Math.abs(dEl) >= 8) parts.push(dEl > 0 ? `${ic('arrow-up')} Raise phone ${Math.abs(dEl).toFixed(0)}°` : `${ic('arrow-down')} Lower phone ${Math.abs(dEl).toFixed(0)}°`);
+      statusText = parts.join(' &middot; ') || 'Almost there…';
     }
-    $('pointmeStatus').textContent = statusText;
+    $('pointmeStatus').innerHTML = statusText;
     $('pointmeDetail').textContent = `${r.name} · el ${r.elev.toFixed(0)}° · az ${r.az.toFixed(0)}°`;
     $('pointme').classList.toggle('locked', locked);
 
@@ -792,7 +792,7 @@ const UI = (() => {
   window.addEventListener('appinstalled', () => {
     $('installBtn').classList.add('hidden');
     deferredInstallPrompt = null;
-    toast('Installed — find Overhead on your home screen / app list.');
+    toast('Installed: find Overhead on your home screen / app list.');
   });
 
   $('installBtn').addEventListener('click', async () => {
@@ -810,13 +810,13 @@ const UI = (() => {
     toast('Open this page in Chrome, Edge, or another installable browser to get a one-tap install button.');
   });
 
-  // Safari/iOS never fires beforeinstallprompt — show the button anyway with instructions,
+  // Safari/iOS never fires beforeinstallprompt - show the button anyway with instructions,
   // as long as it's not already running standalone.
   if(isIOS() && !isStandalone()) $('installBtn').classList.remove('hidden');
 
   // ================= connectivity =================
-  window.addEventListener('offline', () => toast('📡 You\'re offline — location tracking keeps running, but weather and satellite data need a connection.'));
-  window.addEventListener('online', () => toast('✅ Back online.'));
+  window.addEventListener('offline', () => toast("You're offline. Location tracking keeps running, but weather and satellite data need a connection."));
+  window.addEventListener('online', () => toast('Back online.'));
 
   // ================= init =================
   function init(){
@@ -825,11 +825,11 @@ const UI = (() => {
     initSkyplotInteraction();
     renderList([]);
     if('Notification' in window && Notification.permission === 'denied'){
-      $('notifyBtn').textContent = '🔕 Alerts blocked';
+      $('notifyBtn').innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-bell-off"></use></svg> Alerts blocked';
     }
     if('Notification' in window && Notification.permission === 'granted'){
       App.state.notifyEnabled = true;
-      $('notifyBtn').textContent = '🔔 Alerts on';
+      $('notifyBtn').innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-bell"></use></svg> Alerts on';
       $('notifyBtn').disabled = true;
     }
     if('serviceWorker' in navigator){

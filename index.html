@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#05070C">
-<title>Overhead — Satellite Mission Console</title>
+<title>Overhead · Satellite Mission Console</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
@@ -16,82 +16,71 @@
 </head>
 <body>
 
-<!-- ============ INTRO SCENE SEQUENCE ============
-     Fixed-overlay cinematic intro. Hides itself (and never re-shows this
-     session) once the user reaches the end or hits Skip — after that the
-     existing dashboard below behaves exactly as it always has. -->
-<section id="introScenes" class="intro-scenes" aria-label="Overhead introduction">
+<!-- ============ ICON SPRITE (no emoji anywhere in this app) ============ -->
+<svg aria-hidden="true" style="position:absolute; width:0; height:0; overflow:hidden;">
+  <defs>
+    <symbol id="i-satellite" viewBox="0 0 24 24"><path d="M13 7L9 3 6.5 5.5 8 7l-4 4 1.5 1.5-2 2L7 18l2-2 1.5 1.5 4-4 1.5 1.5L18.5 12.5 16 10l1.5-1.5L15 6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M3 21l3.5-3.5M11.5 8.5l3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-orbit" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="10" ry="4.2" fill="none" stroke="currentColor" stroke-width="1.5"/><ellipse cx="12" cy="12" rx="4.2" ry="10" fill="none" stroke="currentColor" stroke-width="1.5" transform="rotate(45 12 12)"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 16 0M7 12a5 5 0 0 1 10 0M10 12a2 2 0 0 1 4 0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="19" r="1.6" fill="currentColor"/></symbol>
+    <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M15 9l-2 5-5 2 2-5z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 7l1.6-2.4h4.8L16 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="13.5" r="3.4" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M20 20l-4.8-4.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M19.4 13.5a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V19.5a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H4.5a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1.1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H10a1.7 1.7 0 0 0 1-1.55V4.5a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V10c.1.45.49.85 1.55 1H19.5a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.3-7-11.5A7 7 0 0 1 19 9.5C19 14.7 12 21 12 21z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="9.5" r="2.4" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18h10.5a3.5 3.5 0 0 0 .5-6.96A5.5 5.5 0 0 0 7.2 9.06 4 4 0 0 0 7 18z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-cloud-sun" viewBox="0 0 24 24"><circle cx="8" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 2.5v1.2M3.5 8H2.3M4.6 4.6l-.85-.85M11.4 4.6l.85-.85" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M8 16h8.5a3 3 0 0 0 .4-5.98A4.7 4.7 0 0 0 8.2 9.7 3.4 3.4 0 0 0 8 16z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 3v2.2M12 18.8V21M4.2 12H2M22 12h-2.2M5.8 5.8L4.3 4.3M19.7 19.7l-1.5-1.5M5.8 18.2l-1.5 1.5M19.7 4.3l-1.5 1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 10.5a6 6 0 0 1 12 0c0 4 1.4 5.2 1.4 5.2H4.6S6 14.5 6 10.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 18.5a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-bell-off" viewBox="0 0 24 24"><path d="M6 10.5a6 6 0 0 1 9.9-4.5M17.7 12.2c.4 2 1.7 3.5 1.7 3.5H8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 18.5a2 2 0 0 0 4 0M3 3l18 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11.5M7.5 11l4.5 4.5L16.5 11" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 18.5h15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="M4 9.5h3.2L11 6v12l-3.8-3.5H4z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M15 9a4 4 0 0 1 0 6M17.6 6.4a8 8 0 0 1 0 11.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 8 0 1 0 0 16c1.4 0 1.9-1 1.4-2-.4-.8 0-1.7 1-1.7H16a4 4 0 0 0 4-4c0-4.6-3.6-8.3-8-8.3z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7.5" cy="10.5" r="1.1" fill="currentColor"/><circle cx="11" cy="7.3" r="1.1" fill="currentColor"/><circle cx="15.2" cy="8.6" r="1.1" fill="currentColor"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M8 14.5a5 5 0 1 1 8 0c-.8 1-1.2 1.7-1.2 3H9.2c0-1.3-.4-2-1.2-3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.4 5.9.7-4.3 4.1 1.1 5.8L12 16.8l-5.3 2.7 1.1-5.8-4.3-4.1 5.9-.7z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="i-star-filled" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.4 5.9.7-4.3 4.1 1.1 5.8L12 16.8l-5.3 2.7 1.1-5.8-4.3-4.1 5.9-.7z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="0.9" fill="currentColor"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5" fill="currentColor"/></symbol>
+    <symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 12.3l2.6 2.6L16.3 9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-signal-off" viewBox="0 0 24 24"><path d="M4 18h1.6v-4H4zM8.2 18h1.6v-8H8.2zM12.4 18H14V7.5h-1.6zM16.6 18h1.6V4h-1.6z" fill="currentColor" opacity="0.55"/><path d="M3 3l18 18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h13.5M13 6.5L18.5 12 13 17.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5.5M11 6.5L5.5 12 11 17.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="M12 19V5.5M6.5 11L12 5.5 17.5 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="M12 5v13.5M17.5 13L12 18.5 6.5 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 11v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="7.7" r="1" fill="currentColor"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v5.3l3.6 2.1" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-crosshair" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-comet" viewBox="0 0 24 24"><circle cx="16" cy="8" r="2.6" fill="currentColor"/><path d="M14 10L4 20M4 20l4-1M4 20l1-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M9 4H5.5A1.5 1.5 0 0 0 4 5.5V9M15 4h3.5A1.5 1.5 0 0 1 20 5.5V9M20 15v3.5a1.5 1.5 0 0 1-1.5 1.5H15M4 15v3.5A1.5 1.5 0 0 0 5.5 20H9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-scan" viewBox="0 0 24 24"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+  </defs>
+</svg>
+
+<!-- ============ INTRO ============
+     Five-second autoplaying title sequence. Plays once on load, fades out,
+     and hands off to the dashboard sitting in the document below it.
+     It does not intercept scroll and does not animate on scroll position.
+     Runtime lives in INTRO_MS in intro.js. -->
+<section id="introScenes" class="intro-scenes" aria-label="Overhead intro">
   <canvas id="introStarfield" class="intro-starfield" aria-hidden="true"></canvas>
   <div class="intro-aurora" aria-hidden="true"></div>
   <div id="introLive" class="sr-only" role="status" aria-live="polite"></div>
 
+  <div class="intro-progressbar" aria-hidden="true"><div class="intro-progressbar-fill" id="introProgressFill"></div></div>
   <button class="intro-skip" id="introSkip">Skip intro</button>
 
-  <div class="intro-side-label prev" id="introPrevLabel" aria-hidden="true"></div>
-  <div class="intro-side-label next" id="introNextLabel" aria-hidden="true"></div>
-  <nav class="intro-dots" id="introDots" aria-label="Scene navigation"></nav>
-  <div class="intro-progressbar" aria-hidden="true"><div class="intro-progressbar-fill" id="introProgressFill"></div></div>
-
-  <div class="intro-nav-buttons">
-    <button class="intro-nav-btn" id="introUp" aria-label="Previous section">▲</button>
-    <button class="intro-nav-btn" id="introDown" aria-label="Next section">▼</button>
-  </div>
-
-  <div class="intro-track" id="introTrack">
-
-    <article class="intro-scene" data-scene="0">
-      <div class="intro-visual" aria-hidden="true">
-        <div class="intro-orbit-dot" style="--orbit-r:78px; animation-duration:7s;"></div>
-        <div class="intro-orbit-dot d2" style="--orbit-r:100px; animation-duration:11s; animation-direction:reverse;"></div>
-      </div>
-      <h1 class="intro-headline">OVERHEAD</h1>
-      <p class="intro-sub">Know what's flying over your head, tonight.</p>
-      <button class="btn intro-cta" data-goto="dashboard">🛰️ Start live tracking</button>
-      <div class="intro-chevron" aria-hidden="true">⌄</div>
-    </article>
-
-    <article class="intro-scene" data-scene="1">
-      <div class="intro-visual visual-skyplot" aria-hidden="true">
-        <div class="intro-ring-static" style="inset:15%;"></div>
-        <div class="intro-ring-static" style="inset:32%;"></div>
-        <div class="intro-orbit-dot" style="--orbit-r:60px; animation-duration:6s;"></div>
-      </div>
-      <h2 class="intro-headline">Live Sky Plot</h2>
-      <p class="intro-sub">Real SGP4 propagation of live TLE data from CelesTrak — every dot is a satellite's actual computed position, not a static chart.</p>
-      <div class="intro-chevron" aria-hidden="true">⌄</div>
-    </article>
-
-    <article class="intro-scene" data-scene="2">
-      <div class="intro-visual visual-compass" aria-hidden="true">
-        <div class="intro-needle"></div>
-      </div>
-      <h2 class="intro-headline">Compass &amp; AR</h2>
-      <p class="intro-sub">Point your phone at the sky. A live compass heading and a camera overlay guide you straight to what you're looking for.</p>
-      <div class="intro-chevron" aria-hidden="true">⌄</div>
-    </article>
-
-    <article class="intro-scene" data-scene="3">
-      <div class="intro-visual visual-catalog" aria-hidden="true">
-        <div class="intro-card-stack">
-          <div class="stack-card"></div>
-          <div class="stack-card"></div>
-          <div class="stack-card"></div>
-        </div>
-      </div>
-      <h2 class="intro-headline">Satellite Catalog</h2>
-      <p class="intro-sub">Search the live catalog, filter by Visible / Above Horizon / Favorites, and dig into any object's full pass details.</p>
-      <div class="intro-chevron" aria-hidden="true">⌄</div>
-    </article>
-
-    <article class="intro-scene" data-scene="4">
-      <div class="intro-visual visual-cta" aria-hidden="true">
-        <span class="intro-check">✓</span>
-      </div>
-      <h2 class="intro-headline">Ready?</h2>
-      <p class="intro-sub">Everything below is live — your location, the real sky, right now.</p>
-      <button class="btn intro-cta" data-goto="dashboard">Enter Overhead</button>
-    </article>
-
+  <div class="intro-stage">
+    <div class="intro-visual" aria-hidden="true">
+      <div class="intro-ring"></div>
+      <div class="intro-ring r2"></div>
+      <div class="intro-orbit-dot" style="--orbit-r:72px; animation-duration:7s;"></div>
+      <div class="intro-orbit-dot d2" style="--orbit-r:96px; animation-duration:11s; animation-direction:reverse;"></div>
+    </div>
+    <h1 class="intro-wordmark">OVERHEAD</h1>
+    <p class="intro-line">Live satellite positions, naked-eye visibility, and which way to look, worked out for the exact spot you are standing in.</p>
+    <p class="intro-status">Starting live tracking</p>
   </div>
 </section>
 
@@ -108,19 +97,19 @@
     </div>
     <div class="clock" id="clock" role="timer" aria-label="Current UTC time">--:--:--</div>
     <div class="nav-actions">
-      <button class="icon-btn" id="searchBtn" aria-label="Search satellites (press /)">🔍</button>
-      <button class="icon-btn" id="settingsBtn" aria-label="Open settings">⚙️</button>
+      <button class="icon-btn" id="searchBtn" aria-label="Search satellites (press /)"><svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg></button>
+      <button class="icon-btn" id="settingsBtn" aria-label="Open settings"><svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg></button>
     </div>
   </nav>
 
   <div class="shell">
     <!-- ============ DESKTOP SIDEBAR ============ -->
     <aside class="sidebar" aria-label="Sections">
-      <button class="icon-btn active" data-section="dashboard" aria-label="Dashboard">🛰️</button>
-      <button class="icon-btn" data-section="sky" aria-label="Sky map">🌌</button>
-      <button class="icon-btn" data-section="satellites" aria-label="Satellite list">📡</button>
-      <button class="icon-btn" data-section="compass" aria-label="Compass">🧭</button>
-      <button class="icon-btn" id="arBtnSidebar" aria-label="AR sky mode">📷</button>
+      <button class="icon-btn active" data-section="dashboard" aria-label="Dashboard"><svg class="icon" aria-hidden="true"><use href="#i-satellite"></use></svg></button>
+      <button class="icon-btn" data-section="sky" aria-label="Sky map"><svg class="icon" aria-hidden="true"><use href="#i-orbit"></use></svg></button>
+      <button class="icon-btn" data-section="satellites" aria-label="Satellite list"><svg class="icon" aria-hidden="true"><use href="#i-list"></use></svg></button>
+      <button class="icon-btn" data-section="compass" aria-label="Compass"><svg class="icon" aria-hidden="true"><use href="#i-compass"></use></svg></button>
+      <button class="icon-btn" id="arBtnSidebar" aria-label="AR sky mode"><svg class="icon" aria-hidden="true"><use href="#i-camera"></use></svg></button>
     </aside>
 
     <!-- ============ MAIN ============ -->
@@ -130,20 +119,20 @@
       <section class="glass hero" id="dashboard" aria-labelledby="hero-title">
         <div class="hero-top">
           <div class="hero-title" id="hero-title">Observer status</div>
-          <span class="sky-badge" id="skyBadge" style="color:var(--text-dim);">— awaiting location —</span>
+          <span class="sky-badge" id="skyBadge" style="color:var(--text-dim);">Awaiting location</span>
         </div>
         <div class="obs-grid">
-          <div class="obs-stat"><div class="obs-label">📍 Latitude</div><div class="obs-value" id="latVal">—</div></div>
-          <div class="obs-stat"><div class="obs-label">📍 Longitude</div><div class="obs-value" id="lonVal">—</div></div>
-          <div class="obs-stat"><div class="obs-label">🌤 Sky condition</div><div class="obs-value" id="skyVal" style="font-size:16px;">—</div></div>
-          <div class="obs-stat"><div class="obs-label">☁ Cloud cover</div><div class="obs-value" id="cloudVal">—</div></div>
-          <div class="obs-stat"><div class="obs-label">☀ Sun altitude</div><div class="obs-value" id="sunVal">—</div></div>
-          <div class="obs-stat"><div class="obs-label">🌙 Moon</div><div class="obs-value" id="moonVal" style="font-size:16px;">—</div></div>
+          <div class="obs-stat"><div class="obs-label"><svg class="icon" aria-hidden="true"><use href="#i-pin"></use></svg> Latitude</div><div class="obs-value" id="latVal">--</div></div>
+          <div class="obs-stat"><div class="obs-label"><svg class="icon" aria-hidden="true"><use href="#i-pin"></use></svg> Longitude</div><div class="obs-value" id="lonVal">--</div></div>
+          <div class="obs-stat"><div class="obs-label"><svg class="icon" aria-hidden="true"><use href="#i-cloud-sun"></use></svg> Sky condition</div><div class="obs-value" id="skyVal" style="font-size:16px;">--</div></div>
+          <div class="obs-stat"><div class="obs-label"><svg class="icon" aria-hidden="true"><use href="#i-cloud"></use></svg> Cloud cover</div><div class="obs-value" id="cloudVal">--</div></div>
+          <div class="obs-stat"><div class="obs-label"><svg class="icon" aria-hidden="true"><use href="#i-sun"></use></svg> Sun altitude</div><div class="obs-value" id="sunVal">--</div></div>
+          <div class="obs-stat"><div class="obs-label"><svg class="icon" aria-hidden="true"><use href="#i-moon"></use></svg> Moon</div><div class="obs-value" id="moonVal" style="font-size:16px;">--</div></div>
         </div>
         <div class="row" style="margin-top:20px; gap:12px; flex-wrap:wrap;">
-          <button class="btn" id="locateBtn">🛰️ Start live tracking</button>
-          <button class="btn ghost" id="notifyBtn">🔔 Enable visibility alerts</button>
-          <button class="btn amber hidden" id="installBtn">⬇️ Install app</button>
+          <button class="btn" id="locateBtn"><svg class="icon" aria-hidden="true"><use href="#i-satellite"></use></svg> Start live tracking</button>
+          <button class="btn ghost" id="notifyBtn"><svg class="icon" aria-hidden="true"><use href="#i-bell"></use></svg> Enable visibility alerts</button>
+          <button class="btn amber hidden" id="installBtn"><svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg> Install app</button>
         </div>
         <div class="small" id="locErr" role="alert" style="margin-top:10px; color:var(--danger); display:none;"></div>
       </section>
@@ -162,7 +151,7 @@
           <!-- SKY PLOT -->
           <section class="glass skycard" id="sky" aria-labelledby="skyplot-title">
             <div class="skycard-head">
-              <div class="section-title" id="skyplot-title">🌌 Sky plot</div>
+              <div class="section-title" id="skyplot-title"><svg class="icon" aria-hidden="true"><use href="#i-orbit"></use></svg> Sky plot</div>
               <div class="row" style="gap:6px;">
                 <select id="groupSelect" class="mono" style="background:rgba(255,255,255,0.05); color:var(--text); border:1px solid var(--border); border-radius:12px; padding:7px 10px; font-size:12px;">
                   <option value="visual">Visual (~100 brightest)</option>
@@ -172,26 +161,26 @@
               </div>
             </div>
             <div class="skyplot-wrap" id="skyplotWrap">
-              <button class="icon-btn" id="skyplotCloseBtn" aria-label="Exit fullscreen" style="display:none;">✕</button>
+              <button class="icon-btn" id="skyplotCloseBtn" aria-label="Exit fullscreen" style="display:none;"><svg class="icon" aria-hidden="true"><use href="#i-x"></use></svg></button>
               <canvas id="skyplot" width="600" height="600" role="img" aria-label="Polar sky plot showing satellite positions relative to your horizon"></canvas>
               <div class="skyplot-tag" id="skyplotTag">tap a dot to select</div>
               <div class="skyplot-controls">
-                <button class="icon-btn" id="fullscreenBtn" aria-label="Fullscreen sky plot">⛶</button>
+                <button class="icon-btn" id="fullscreenBtn" aria-label="Fullscreen sky plot"><svg class="icon" aria-hidden="true"><use href="#i-expand"></use></svg></button>
                 <button class="icon-btn" id="zoomIn" aria-label="Zoom in">+</button>
                 <button class="icon-btn" id="zoomOut" aria-label="Zoom out">−</button>
                 <button class="icon-btn" id="zoomReset" aria-label="Reset view">⟲</button>
               </div>
             </div>
             <div class="row" style="justify-content:center; gap:16px; margin-top:10px;" class="small">
-              <span class="small">🟢 naked-eye visible</span>
-              <span class="small">🔵 above horizon</span>
-              <span class="small">⚪ selected</span>
+              <span class="small"><span class="dot dot-green"></span> naked-eye visible</span>
+              <span class="small"><span class="dot dot-blue"></span> above horizon</span>
+              <span class="small"><span class="dot dot-outline"></span> selected</span>
             </div>
           </section>
 
           <!-- COMPASS -->
           <section class="glass compass-wrap" id="compass" aria-labelledby="compass-title">
-            <div class="section-title" id="compass-title">🧭 Live compass</div>
+            <div class="section-title" id="compass-title"><svg class="icon" aria-hidden="true"><use href="#i-compass"></use></svg> Live compass</div>
             <div class="compass-dial" id="compassDial">
               <div class="compass-rose" id="compassRose">
                 <span style="top:6px; left:50%; transform:translateX(-50%); color:var(--primary);">N</span>
@@ -202,7 +191,7 @@
               <div class="compass-needle" id="compassNeedle"></div>
               <div class="compass-center"></div>
             </div>
-            <div class="heading-readout" id="headingReadout">— °</div>
+            <div class="heading-readout" id="headingReadout">-- °</div>
             <div class="heading-label" id="headingLabel">Compass not active</div>
             <button class="btn ghost sm" id="compassBtn">Enable compass</button>
           </section>
@@ -212,18 +201,18 @@
         <!-- SATELLITE LIST -->
         <section class="glass" id="satellites" style="padding:16px;" aria-labelledby="list-title">
           <div class="skycard-head">
-            <div class="section-title" id="list-title">📡 Satellites</div>
-            <button class="btn ghost sm" id="scanBtn">Scan sky</button>
+            <div class="section-title" id="list-title"><svg class="icon" aria-hidden="true"><use href="#i-list"></use></svg> Satellites</div>
+            <button class="btn ghost sm" id="scanBtn"><svg class="icon" aria-hidden="true"><use href="#i-scan"></use></svg> Scan sky</button>
           </div>
           <div class="list-toolbar" role="tablist" aria-label="Filter satellites">
             <button class="filter-chip active" data-filter="all">All</button>
             <button class="filter-chip" data-filter="visible">Visible</button>
             <button class="filter-chip" data-filter="above">Above horizon</button>
-            <button class="filter-chip" data-filter="favorites">★ Favorites</button>
+            <button class="filter-chip" data-filter="favorites"><svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg> Favorites</button>
           </div>
           <div class="sat-grid" id="satGrid">
             <div class="empty-state">
-              <div class="big">🛰️</div>
+              <div class="big"><svg class="icon big-icon" aria-hidden="true"><use href="#i-satellite"></use></svg></div>
               <h3>No scan yet</h3>
               <p class="small">Start tracking, then tap "Scan sky" to load the live catalog.</p>
             </div>
@@ -251,24 +240,24 @@
 <div class="palette-overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-label="Settings">
   <div class="glass palette" style="text-align:left;">
     <div class="row between" style="margin-bottom:14px;">
-      <div class="section-title" style="margin:0;">⚙️ Settings</div>
-      <button class="icon-btn" id="settingsClose" aria-label="Close settings">✕</button>
+      <div class="section-title" style="margin:0;"><svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg> Settings</div>
+      <button class="icon-btn" id="settingsClose" aria-label="Close settings"><svg class="icon" aria-hidden="true"><use href="#i-x"></use></svg></button>
     </div>
 
     <div class="row between" style="padding:4px 0;">
-      <span class="small">🔊 Sound effects</span>
+      <span class="small"><svg class="icon" aria-hidden="true"><use href="#i-volume"></use></svg> Sound effects</span>
       <button class="btn ghost sm" id="soundBtn" aria-pressed="false">Off</button>
     </div>
     <div class="row between" style="padding:8px 0 14px;">
-      <span class="small">🎨 Theme accent</span>
+      <span class="small"><svg class="icon" aria-hidden="true"><use href="#i-palette"></use></svg> Theme accent</span>
       <button class="btn ghost sm" id="themeBtn" aria-pressed="false">Cyan</button>
     </div>
 
-    <label class="small" for="bortleSlider">💡 Local light pollution (Bortle scale): <b id="bortleVal" style="color:var(--text);">5</b></label>
+    <label class="small" for="bortleSlider"><svg class="icon" aria-hidden="true"><use href="#i-bulb"></use></svg> Local light pollution (Bortle scale): <b id="bortleVal" style="color:var(--text);">5</b></label>
     <input type="range" id="bortleSlider" min="1" max="9" value="5" style="margin:10px 0 4px;">
     <div class="row between small"><span>1 · pristine sky</span><span>9 · inner city</span></div>
     <div style="height:16px;"></div>
-    <label class="small">🧭 Compass calibration</label>
+    <label class="small"><svg class="icon" aria-hidden="true"><use href="#i-compass"></use></svg> Compass calibration</label>
     <p class="small" style="margin-top:4px;">If the compass points the wrong way, face a known direction (e.g. north) and tap calibrate.</p>
     <button class="btn ghost sm full" id="calibrateBtn" style="margin-top:8px;">Calibrate to North</button>
   </div>
@@ -281,10 +270,10 @@
 
 <!-- ============ POINT-ME-TO-SATELLITE OVERLAY ============ -->
 <div class="pointme" id="pointme" role="dialog" aria-modal="true" aria-label="Directional guidance">
-  <button class="icon-btn pointme-close" id="pointmeClose" aria-label="Close guidance">✕</button>
-  <div class="pointme-arrow" id="pointmeArrow">⬆</div>
+  <button class="icon-btn pointme-close" id="pointmeClose" aria-label="Close guidance"><svg class="icon" aria-hidden="true"><use href="#i-x"></use></svg></button>
+  <div class="pointme-arrow" id="pointmeArrow"><svg class="icon" aria-hidden="true"><use href="#i-arrow-up"></use></svg></div>
   <div class="pointme-status" id="pointmeStatus">Turn to locate satellite</div>
-  <div class="pointme-detail" id="pointmeDetail">—</div>
+  <div class="pointme-detail" id="pointmeDetail">--</div>
   <div class="reticle" id="reticle" style="margin-top:28px;" aria-hidden="true"></div>
 </div>
 
@@ -292,23 +281,24 @@
 <div class="ar-view" id="arView" role="dialog" aria-modal="true" aria-label="Augmented reality sky view">
   <video id="arVideo" playsinline autoplay muted></video>
   <canvas id="arCanvas"></canvas>
-  <button class="icon-btn ar-close" id="arClose" aria-label="Close AR mode">✕</button>
+  <button class="icon-btn ar-close" id="arClose" aria-label="Close AR mode"><svg class="icon" aria-hidden="true"><use href="#i-x"></use></svg></button>
   <div class="ar-hint">Pan your phone across the sky · tap a marker for details</div>
 </div>
 
 <!-- ============ MOBILE BOTTOM DOCK ============ -->
 <nav class="dock glass" aria-label="Mobile navigation">
-  <div class="dock-item active" data-section="dashboard"><span class="ic">🛰️</span>Home</div>
-  <div class="dock-item" data-section="sky"><span class="ic">🌌</span>Sky</div>
-  <div class="dock-item" data-section="satellites"><span class="ic">📡</span>List</div>
-  <div class="dock-item" data-section="compass"><span class="ic">🧭</span>Compass</div>
-  <div class="dock-item" id="arBtnDock"><span class="ic">📷</span>AR</div>
+  <div class="dock-item active" data-section="dashboard"><span class="ic"><svg class="icon" aria-hidden="true"><use href="#i-satellite"></use></svg></span>Home</div>
+  <div class="dock-item" data-section="sky"><span class="ic"><svg class="icon" aria-hidden="true"><use href="#i-orbit"></use></svg></span>Sky</div>
+  <div class="dock-item" data-section="satellites"><span class="ic"><svg class="icon" aria-hidden="true"><use href="#i-list"></use></svg></span>List</div>
+  <div class="dock-item" data-section="compass"><span class="ic"><svg class="icon" aria-hidden="true"><use href="#i-compass"></use></svg></span>Compass</div>
+  <div class="dock-item" id="arBtnDock"><span class="ic"><svg class="icon" aria-hidden="true"><use href="#i-camera"></use></svg></span>AR</div>
 </nav>
 
 <div class="toast-stack" id="toastStack" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/satellite.js@5.0.0/dist/satellite.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.js"></script>
+<script src="icons.js"></script>
 <script src="visibility.js"></script>
 <script src="app.js"></script>
 <script src="compass.js"></script>

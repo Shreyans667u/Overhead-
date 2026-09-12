@@ -1,9 +1,9 @@
 // Bump this on every deploy that changes any shell file. Changing this string
 // changes the byte content of this script, which is what makes browsers
 // notice a new service worker exists and actually install it.
-const CACHE = 'overhead-v6';
+const CACHE = 'overhead-v7';
 const SHELL = [
-  './', './index.html', './styles.css', './intro.css', './visibility.js', './app.js',
+  './', './index.html', './styles.css', './intro.css', './icons.js', './visibility.js', './app.js',
   './compass.js', './ar.js', './ui.js', './intro.js', './manifest.json', './icon.svg',
   './icon-192.png', './icon-512.png', './privacy.html', './terms.html'
 ];
@@ -22,7 +22,7 @@ self.addEventListener('activate', event => {
 
 // Network-first for our own app files: always try to fetch the latest version
 // first, and only fall back to the cached copy if the network fails (offline).
-// This is the opposite of "cache-first" — it trades a few extra bytes on each
+// This is the opposite of "cache-first" - it trades a few extra bytes on each
 // load for guaranteeing pushed updates actually show up, which matters far
 // more for a fast-moving app than shaving milliseconds off a repeat load.
 self.addEventListener('fetch', event => {

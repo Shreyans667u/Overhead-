@@ -2,7 +2,7 @@
 /*
  * Visibility scoring module.
  * This is purely additive analysis layered on top of the existing SGP4
- * az/el/eclipse output — it does NOT touch orbital propagation, TLE parsing,
+ * az/el/eclipse output - it does NOT touch orbital propagation, TLE parsing,
  * or any of the existing tracking math. It estimates how likely a satellite
  * is to be seen with the naked eye right now, as a 0-100 confidence score.
  *
@@ -14,7 +14,7 @@ const Visibility = (() => {
 
   // Rough "standard magnitude" (brightness at 1000km range, fully lit) by
   // object class. These are ballpark figures used by amateur tracking
-  // communities for common object types — not per-satellite measurements.
+  // communities for common object types - not per-satellite measurements.
   function standardMagnitude(name){
     const n = name.toUpperCase();
     if(n.includes('ISS') || n.includes('ZARYA')) return -1.8;
@@ -53,7 +53,7 @@ const Visibility = (() => {
 
     if(p.eclipsed){
       return { score:0, tier:'not-visible', label:'Not Visible', magnitude:mag,
-        reason:"In Earth's shadow — not sunlit", moonFactor:1, cloudFactor:1 };
+        reason:"In Earth's shadow, not sunlit", moonFactor:1, cloudFactor:1 };
     }
     if(p.elevDeg < 0){
       return { score:0, tier:'not-visible', label:'Below Horizon', magnitude:mag,
@@ -78,7 +78,7 @@ const Visibility = (() => {
     const bortle = clamp(p.bortle || 5, 1, 9);
     const lpFactor = 1 - ((bortle - 1) / 8) * 0.3;
 
-    // 5. Moon interference — bright moon near the satellite washes it out
+    // 5. Moon interference - bright moon near the satellite washes it out
     let moonFactor = 1;
     if(p.moonAltDeg > 0 && p.moonIllumFraction > 0.1){
       const sep = angularSeparationDeg(p.azDeg, p.elevDeg, p.moonAzDeg, p.moonAltDeg);
@@ -107,7 +107,7 @@ const Visibility = (() => {
 
     let reason = null;
     if(tier === 'not-visible'){
-      if(skyDark < 0.4) reason = 'Sky too bright — wait for darker twilight';
+      if(skyDark < 0.4) reason = 'Sky too bright, wait for darker twilight';
       else if(p.cloudPct >= 70) reason = `Heavy cloud cover (${Math.round(p.cloudPct)}%)`;
       else if(mag > 7.2) reason = 'Too dim for the naked eye';
       else reason = 'Combined conditions too poor';

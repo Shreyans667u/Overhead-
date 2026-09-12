@@ -1,7 +1,7 @@
 'use strict';
 /*
- * AR — simplified augmented-reality overlay. This is a 2D FOV-projection
- * (heading/pitch -> screen x/y), not a full 6DOF ARKit/ARCore scene graph —
+ * AR - simplified augmented-reality overlay. This is a 2D FOV-projection
+ * (heading/pitch -> screen x/y), not a full 6DOF ARKit/ARCore scene graph -
  * that would need a native layer or a heavy WebXR-only path with poor
  * cross-device support. For "point roughly at the sky and see labels
  * line up," this is the standard technique lightweight sky apps use.
@@ -27,7 +27,7 @@ const AR = (() => {
       video.srcObject = stream;
     }catch(e){
       const reason = (e.name === 'NotFoundError') ? 'No camera was found on this device.'
-        : (e.name === 'NotAllowedError') ? 'Camera access was denied — enable it for this site in your browser settings.'
+        : (e.name === 'NotAllowedError') ? 'Camera access was denied. Enable it for this site in your browser settings.'
         : 'Camera access is unavailable: ' + e.message;
       UI.toast(reason);
       isOpen = false;
@@ -84,7 +84,7 @@ const AR = (() => {
       return;
     }
 
-    // Debug/diagnostic readout — makes a "why is nothing showing up" situation
+    // Debug/diagnostic readout - makes a "why is nothing showing up" situation
     // debuggable instead of a silent black box.
     ctx.textAlign = 'left'; ctx.font = '11px "IBM Plex Mono", monospace';
     ctx.fillStyle = 'rgba(255,255,255,0.65)';
@@ -94,7 +94,7 @@ const AR = (() => {
     if(pitch === null){
       ctx.fillStyle = 'rgba(251,191,36,0.9)';
       ctx.font = '13px Inter, sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText('No tilt sensor reading — vertical alignment will be off until this device reports one', canvas.width/2, canvas.height - 40);
+      ctx.fillText('No tilt sensor reading: vertical alignment will be off until this device reports one', canvas.width/2, canvas.height - 40);
     }
 
     for(const r of App.state.results){

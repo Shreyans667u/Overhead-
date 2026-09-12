@@ -1,5 +1,5 @@
 /* ============================================================
-   OVERHEAD — Design System
+   OVERHEAD - Design System
    Premium dark mission-control theme. All values as CSS custom
    properties so the whole system is themeable from one place.
    ============================================================ */
@@ -30,6 +30,7 @@
   --radius-lg: 24px;
   --radius-md: 20px;
   --radius-sm: 14px;
+  --radius-btn: 12px;
   --radius-pill: 999px;
 
   --ease: cubic-bezier(.22,1,.36,1);
@@ -45,7 +46,7 @@
   color-scheme: dark;
 }
 
-/* theme variants — swappable accent emphasis (Nice Extra: theme switcher) */
+/* theme variants - swappable accent emphasis (Nice Extra: theme switcher) */
 [data-theme="amber"]{ --primary: #FBBF24; --primary-dim:#F59E0B; --accent:#5EEAD4; }
 
 *,*::before,*::after{ box-sizing:border-box; }
@@ -127,7 +128,7 @@ a{ color:var(--primary); }
   margin:var(--sp-3) var(--sp-3) 0;
   padding:0 var(--sp-4);
   height:var(--nav-h);
-  border-radius:var(--radius-pill);
+  border-radius:var(--radius-lg);
   overflow:hidden;
   animation: fadeDown var(--dur-slow) var(--ease) both;
 }
@@ -229,7 +230,7 @@ a{ color:var(--primary); }
   position:relative; overflow:hidden; isolation:isolate;
   display:inline-flex; align-items:center; justify-content:center; gap:8px;
   font-family:inherit; font-weight:700; font-size:13px; letter-spacing:0.2px;
-  border:none; border-radius:var(--radius-pill); padding:13px 22px; cursor:pointer;
+  border:none; border-radius:var(--radius-btn); padding:13px 22px; cursor:pointer;
   color:#04140F; background:linear-gradient(135deg, var(--primary), var(--primary-dim));
   box-shadow:0 6px 20px rgba(94,234,212,0.25);
   transition:transform var(--dur-fast) var(--ease-bounce), box-shadow var(--dur-fast);
@@ -262,6 +263,24 @@ a{ color:var(--primary); }
   transition:all var(--dur-fast) var(--ease);
 }
 .icon-toggle.on{ background:linear-gradient(135deg, var(--primary), var(--primary-dim)); color:#04140F; box-shadow:var(--glow-cyan); }
+
+/* ============ icon sprite sizing ============ */
+.icon{ width:1em; height:1em; display:inline-block; vertical-align:-0.14em; fill:none; }
+.icon-btn .icon, .dock-item .icon{ width:20px; height:20px; }
+.sidebar .icon-btn .icon{ width:22px; height:22px; }
+.section-title .icon, .obs-label .icon{ width:15px; height:15px; margin-right:1px; }
+.btn .icon{ width:16px; height:16px; }
+.small .icon{ width:13px; height:13px; }
+.big-icon{ width:40px; height:40px; color:var(--text-dim); }
+
+/* ============ status dots (replace colored-circle emoji) ============ */
+.dot{ width:9px; height:9px; border-radius:50%; display:inline-block; flex-shrink:0; }
+.dot-green{ background:var(--success); box-shadow:0 0 8px rgba(34,197,94,0.6); }
+.dot-blue{ background:var(--primary); box-shadow:0 0 8px rgba(94,234,212,0.5); }
+.dot-amber{ background:var(--accent); box-shadow:0 0 8px rgba(251,191,36,0.5); }
+.dot-red{ background:var(--danger); box-shadow:0 0 8px rgba(239,68,68,0.5); }
+.dot-gray{ background:var(--text-dim); }
+.dot-outline{ background:transparent; border:1.5px solid var(--text-dim); }
 
 /* ============ badges ============ */
 .badge{
@@ -334,7 +353,7 @@ body.skyplot-locked{ overflow:hidden; }
 /* ============ satellite cards ============ */
 .list-toolbar{ display:flex; gap:var(--sp-2); align-items:center; margin-bottom:var(--sp-2); flex-wrap:wrap; }
 .filter-chip{
-  font-size:11.5px; font-weight:700; padding:7px 13px; border-radius:var(--radius-pill);
+  font-size:11.5px; font-weight:700; padding:8px 13px; border-radius:8px;
   border:1px solid var(--border); color:var(--text-dim); cursor:pointer; background:transparent;
   transition:all var(--dur-fast);
 }
@@ -354,7 +373,7 @@ body.skyplot-locked{ overflow:hidden; }
 .sat-card.visible-now{ border-color:rgba(34,197,94,0.5); box-shadow:0 0 0 1px rgba(34,197,94,0.3), 0 0 30px rgba(34,197,94,0.15); }
 .sat-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
 .sat-id{ display:flex; align-items:center; gap:10px; min-width:0; }
-.sat-emoji{ font-size:22px; line-height:1; filter:drop-shadow(0 0 6px rgba(94,234,212,0.5)); }
+.sat-icon{ font-size:22px; line-height:1; filter:drop-shadow(0 0 6px rgba(94,234,212,0.5)); }
 .sat-name{ font-weight:800; font-size:14.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .sat-orbit{ font-size:10.5px; color:var(--text-dim); font-family:monospace; }
 .now-badge{

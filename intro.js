@@ -1,211 +1,161 @@
 'use strict';
 /*
- * Intro — the cinematic scene sequence at the top of the page.
+ * Intro - the 5-second autoplaying title sequence.
  *
- * Deliberately does NOT use real scroll position math. While the intro is
- * active, the page's actual scrollY never moves — #introScenes is a
- * position:fixed full-viewport overlay, and "moving between scenes" is
- * purely a JS state index (`current`) driving CSS class swaps
- * (transform/opacity only, per spec). This is simpler and more reliable
- * across browsers than trying to hijack native scroll, and it's what makes
- * the final "hand off to the dashboard" step trivial: we just hide the
- * overlay and the dashboard — already sitting normally in the document
- * below it — is revealed and scrolls exactly like any other webpage.
+ * Runtime is fixed: INTRO_MS below is the single source of truth, and it is
+ * pushed into the CSS custom property --intro-total on init so the progress
+ * bar and the actual handoff can never drift apart.
  *
- * All five input methods (wheel, buttons, swipe, keyboard, dot-click) funnel
- * through goTo()/next()/prev(), which are gated by a single `animating`
- * flag. That's what stops rapid scrolling from desyncing the animation
- * queue — during a transition, every other input is simply ignored, not
- * queued.
+ * What this deliberately does NOT do:
+ *   - It never intercepts wheel, touchmove, or keyboard scrolling, and it
+ *     never reads scrollY. There is no scroll-linked animation of any kind.
+ *     The overlay is position:fixed and the body is locked while it plays,
+ *     so the real scroll position simply never moves.
+ *   - It never scales content up or blurs it. Reveals are opacity plus a
+ *     12px vertical lift, both compositor-friendly.
+ *
+ * Handoff: at INTRO_MS we fade the overlay out and unlock the body. The
+ * dashboard is already sitting in the document underneath, so it is simply
+ * revealed and scrolls like any normal page from then on.
  */
 const Intro = (() => {
   const root = document.getElementById('introScenes');
-  if(!root) return { init(){} }; // safety: never crash the host page if markup is missing
+  if(!root) return { init(){} }; // never break the host page if markup is absent
 
-  const scenes = Array.from(root.querySelectorAll('.intro-scene'));
-  const track = document.getElementById('introTrack');
-  const dotsWrap = document.getElementById('introDots');
-  const progressFill = document.getElementById('introProgressFill');
-  const prevLabel = document.getElementById('introPrevLabel');
-  const nextLabel = document.getElementById('introNextLabel');
-  const upBtn = document.getElementById('introUp');
-  const downBtn = document.getElementById('introDown');
+  const INTRO_MS = 5000;   // total intro runtime
+  const FADE_MS  = 420;    // overlay fade-out on handoff
+  const PHASE_2  = 1700;   // description line appears
+  const PHASE_3  = 3450;   // handoff status line appears
+
   const skipBtn = document.getElementById('introSkip');
   const liveRegion = document.getElementById('introLive');
 
-  const N = scenes.length;
-  let current = 0;
-  let animating = false;
-  let active = false; // whether intro is intercepting input at all (false once handed off)
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const TRANSITION_MS = reduceMotion ? 260 : 780; // matches CSS var(--intro-dur) + a small safety margin
 
-  const SCENE_NAMES = ['Hero', 'Live Sky Plot', 'Compass & AR', 'Satellite Catalog', 'Get Started'];
+  let finished = false;
+  const timers = [];
+  let starfieldStop = null;
 
-  function buildDots(){
-    scenes.forEach((_, i) => {
-      const b = document.createElement('button');
-      b.className = 'intro-dot' + (i === 0 ? ' is-current' : '');
-      b.setAttribute('aria-label', `Go to scene ${i+1}: ${SCENE_NAMES[i] || ''}`);
-      b.addEventListener('click', () => goTo(i));
-      dotsWrap.appendChild(b);
-    });
+  function later(fn, ms){ timers.push(window.setTimeout(fn, ms)); }
+  function clearTimers(){ while(timers.length) window.clearTimeout(timers.pop()); }
+
+  function phase(n){
+    root.classList.remove('is-p1', 'is-p2', 'is-p3');
+    root.classList.add('is-p' + n);
   }
 
-  function render(){
-    scenes.forEach((el, i) => {
-      el.classList.remove('is-active', 'is-prev', 'is-next');
-      if(i === current) el.classList.add('is-active');
-      else if(i < current) el.classList.add('is-prev');
-      else el.classList.add('is-next');
-      el.setAttribute('aria-hidden', i === current ? 'false' : 'true');
-    });
-    dotsWrap.querySelectorAll('.intro-dot').forEach((d,i) => d.classList.toggle('is-current', i===current));
-    progressFill.style.width = `${((current+1)/N)*100}%`;
+  function finish(reason){
+    if(finished) return;
+    finished = true;
+    clearTimers();
 
-    prevLabel.textContent = current > 0 ? '← ' + SCENE_NAMES[current-1] : '';
-    prevLabel.classList.toggle('is-empty', current === 0);
-    nextLabel.textContent = current < N-1 ? SCENE_NAMES[current+1] + ' →' : '';
-    nextLabel.classList.toggle('is-empty', current === N-1);
-
-    upBtn.disabled = current === 0;
-    downBtn.setAttribute('aria-label', current === N-1 ? 'Enter dashboard' : 'Next section');
-    downBtn.textContent = current === N-1 ? '↵' : '▼';
-
-    if(liveRegion) liveRegion.textContent = `Scene ${current+1} of ${N}: ${SCENE_NAMES[current]}`;
-  }
-
-  function goTo(index){
-    if(!active || animating) return;
-    if(index === current){ return; }
-    if(index < 0){ return; }
-    if(index >= N){ handoff(); return; }
-    animating = true;
-    current = index;
-    render();
-    window.setTimeout(() => { animating = false; }, TRANSITION_MS);
-  }
-
-  function next(){
-    if(!active || animating) return;
-    if(current === N-1){ handoff(); return; }
-    goTo(current+1);
-  }
-  function prev(){ goTo(current-1); }
-
-  function handoff(){
-    if(!active) return;
-    active = false;
-    animating = true;
-    root.style.transition = 'opacity 380ms ease';
+    root.style.transition = `opacity ${FADE_MS}ms ease`;
     root.style.opacity = '0';
+
     window.setTimeout(() => {
       root.classList.add('intro-hidden');
       root.style.removeProperty('opacity');
       root.style.removeProperty('transition');
       document.body.classList.remove('intro-lock');
-      // land the user at the very top of the dashboard, then normal page scroll takes over
       window.scrollTo(0, 0);
-      animating = false;
-    }, 380);
-  }
-
-  function skipIntro(){
-    active = false;
-    root.classList.add('intro-hidden');
-    document.body.classList.remove('intro-lock');
-  }
-
-  // ---------------- input handlers ----------------
-  let wheelCooldown = false;
-  function onWheel(e){
-    if(!active) return;
-    e.preventDefault();
-    if(wheelCooldown || animating) return;
-    wheelCooldown = true;
-    window.setTimeout(() => { wheelCooldown = false; }, TRANSITION_MS);
-    if(e.deltaY > 12) next();
-    else if(e.deltaY < -12) prev();
-  }
-
-  function onKeydown(e){
-    if(!active) return;
-    if(['ArrowDown','PageDown'].includes(e.key)){ e.preventDefault(); next(); }
-    else if(['ArrowUp','PageUp'].includes(e.key)){ e.preventDefault(); prev(); }
-    // Tab/Enter deliberately NOT intercepted — normal focus/activation still works
-  }
-
-  let touchStartY = null;
-  const SWIPE_THRESHOLD = 45; // px — avoids accidental triggers from small taps/jitter
-  function onTouchStart(e){ if(active) touchStartY = e.touches[0].clientY; }
-  function onTouchEnd(e){
-    if(!active || touchStartY === null) return;
-    const dy = touchStartY - e.changedTouches[0].clientY;
-    touchStartY = null;
-    if(Math.abs(dy) < SWIPE_THRESHOLD) return; // treat as a tap, not a swipe
-    if(dy > 0) next(); else prev();
+      if(starfieldStop) starfieldStop();
+      if(liveRegion) liveRegion.textContent = 'Intro finished. Dashboard ready.';
+      // let the rest of the app know the viewport is theirs now
+      document.dispatchEvent(new CustomEvent('intro:done', { detail:{ reason } }));
+    }, FADE_MS);
   }
 
   function init(){
-    buildDots();
-    render();
+    root.style.setProperty('--intro-total', INTRO_MS + 'ms');
 
-    // Previously this auto-skipped for returning visitors (localStorage flag)
-    // and installed-PWA launches. Removed per explicit request — the intro
-    // now plays every time, no exceptions. The "Skip intro" button still
-    // lets someone bail out of a given viewing without watching all 5 scenes.
-    active = true;
     document.body.classList.add('intro-lock');
+    if(liveRegion) liveRegion.textContent = 'Overhead intro playing. Five seconds. Press the skip button to go straight to the dashboard.';
 
-    root.addEventListener('wheel', onWheel, { passive:false });
-    document.addEventListener('keydown', onKeydown);
-    root.addEventListener('touchstart', onTouchStart, { passive:true });
-    root.addEventListener('touchend', onTouchEnd, { passive:true });
-    upBtn.addEventListener('click', prev);
-    downBtn.addEventListener('click', next);
-    skipBtn.addEventListener('click', skipIntro);
-    root.querySelectorAll('[data-goto="dashboard"]').forEach(btn => btn.addEventListener('click', handoff));
+    if(skipBtn) skipBtn.addEventListener('click', () => finish('skipped'));
 
-    initStarfield();
+    // Escape is the conventional "get me out of this" key for a full-screen
+    // overlay. It is the only key this intro listens for.
+    document.addEventListener('keydown', function onEsc(e){
+      if(e.key === 'Escape' && !finished){ finish('escape'); }
+      if(finished) document.removeEventListener('keydown', onEsc);
+    });
+
+    startStarfield();
+
+    // kick the timeline on the next frame so the initial hidden state is
+    // painted first and the first transition actually runs
+    requestAnimationFrame(() => {
+      root.classList.add('is-running');
+      phase(1);
+      later(() => phase(2), PHASE_2);
+      later(() => phase(3), PHASE_3);
+      later(() => finish('completed'), INTRO_MS);
+    });
   }
 
-  // continuous, independent-of-scene-transitions drifting starfield
-  function initStarfield(){
+  /* Drifting starfield. Pauses itself when the tab is hidden and is torn
+     down completely at handoff so it is not burning frames behind the
+     dashboard. */
+  function startStarfield(){
     const canvas = document.getElementById('introStarfield');
     if(!canvas) return;
     const ctx = canvas.getContext('2d');
-    let stars = [], raf = null, running = true;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let stars = [], raf = null, running = true, stopped = false;
 
     function size(){
-      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-      const n = Math.floor((window.innerWidth*window.innerHeight)/7000);
-      stars = Array.from({length:n}, () => ({
-        x: Math.random()*canvas.width, y: Math.random()*canvas.height,
-        r: Math.random()*1.4+0.3, vy: Math.random()*0.06+0.015, tw: Math.random()*Math.PI*2
+      canvas.width = Math.floor(window.innerWidth * dpr);
+      canvas.height = Math.floor(window.innerHeight * dpr);
+      canvas.style.width = window.innerWidth + 'px';
+      canvas.style.height = window.innerHeight + 'px';
+      const n = Math.floor((window.innerWidth * window.innerHeight) / 7000);
+      stars = Array.from({ length:n }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: (Math.random() * 1.3 + 0.3) * dpr,
+        vy: (Math.random() * 0.05 + 0.012) * dpr,
+        tw: Math.random() * Math.PI * 2
       }));
     }
     size();
     window.addEventListener('resize', size);
 
     function loop(){
-      if(!running){ raf = null; return; }
-      ctx.clearRect(0,0,canvas.width,canvas.height);
+      if(!running || stopped){ raf = null; return; }
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#fff';
       for(const s of stars){
         s.y += s.vy; if(s.y > canvas.height) s.y = 0;
-        s.tw += 0.015;
-        ctx.globalAlpha = Math.max(0.15, 0.5+Math.sin(s.tw)*0.4);
-        ctx.fillStyle = '#fff';
-        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
+        s.tw += 0.014;
+        ctx.globalAlpha = Math.max(0.15, 0.5 + Math.sin(s.tw) * 0.38);
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
       }
       ctx.globalAlpha = 1;
       raf = requestAnimationFrame(loop);
     }
-    raf = requestAnimationFrame(loop);
+
+    if(reduceMotion){
+      // draw one static frame instead of animating
+      running = false;
+      ctx.fillStyle = '#fff';
+      for(const s of stars){ ctx.globalAlpha = 0.45; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill(); }
+      ctx.globalAlpha = 1;
+    } else {
+      raf = requestAnimationFrame(loop);
+    }
 
     document.addEventListener('visibilitychange', () => {
+      if(stopped || reduceMotion) return;
       running = !document.hidden;
       if(running && !raf) raf = requestAnimationFrame(loop);
     });
+
+    starfieldStop = () => {
+      stopped = true; running = false;
+      if(raf) cancelAnimationFrame(raf);
+      raf = null;
+      window.removeEventListener('resize', size);
+    };
   }
 
   return { init };

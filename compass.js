@@ -1,6 +1,6 @@
 'use strict';
 /*
- * Compass — wraps the DeviceOrientation API with circular smoothing (to
+ * Compass - wraps the DeviceOrientation API with circular smoothing (to
  * kill jitter) and a user-settable calibration offset. Exposes a simple
  * heading/pitch pair that ui.js/ar.js consume, plus a status string so the
  * UI can explain *why* nothing is happening instead of sitting silent.
@@ -52,7 +52,7 @@ const Compass = (() => {
     } else if(e.alpha !== null && !usingAbsolute){
       h = 360 - e.alpha; // best-effort fallback; may drift from true north
     } else {
-      return; // a higher-quality stream is already active — ignore this noisier one
+      return; // a higher-quality stream is already active - ignore this noisier one
     }
 
     if(sourceIsHighQuality) usingAbsolute = true;
@@ -81,7 +81,7 @@ const Compass = (() => {
 
   async function requestAccess(){
     if(!state.supported){
-      setStatus('no-support', "This browser doesn't expose device orientation — try Chrome or Safari on a phone.");
+      setStatus('no-support', "This browser doesn't expose device orientation. Try Chrome or Safari on a phone.");
       return { ok:false, reason: state.message };
     }
     setStatus('requesting', 'Waiting for permission…');
@@ -109,7 +109,7 @@ const Compass = (() => {
     clearTimeout(watchdog);
     watchdog = setTimeout(() => {
       if(!state.active){
-        setStatus('no-signal', "No compass signal after a few seconds — this device may lack a magnetometer, or the browser is blocking sensor access. Try moving the phone in a figure-8, or reload and grant permission again.");
+        setStatus('no-signal', "No compass signal after a few seconds. This device may lack a magnetometer, or the browser is blocking sensor access. Try moving the phone in a figure-8, or reload and grant permission again.");
       }
     }, WATCHDOG_MS);
 

@@ -1,6 +1,6 @@
 'use strict';
 /*
- * App — core tracking engine. No DOM rendering here (that's ui.js); this
+ * App - core tracking engine. No DOM rendering here (that's ui.js); this
  * module owns state + orbital/astronomical math and exposes it via
  * App.state and a small pub/sub so the UI layer can react.
  */
@@ -60,7 +60,7 @@ const App = (() => {
     switch(err.code){
       case 1: return "Location permission was denied. Enable it for this site in your browser's site settings, then tap Start live tracking again.";
       case 2: return "Your device couldn't determine a location right now (no GPS/network fix). Try moving somewhere with a clearer sky view or better signal.";
-      case 3: return "Location request timed out. This can happen indoors — try again near a window or outdoors.";
+      case 3: return "Location request timed out. This can happen indoors: try again near a window or outdoors.";
       default: return 'Could not get your location: ' + err.message;
     }
   }
@@ -266,10 +266,10 @@ const App = (() => {
           icon: 'icon-192.png', tag: 'overhead-' + name
         };
         if('serviceWorker' in navigator){
-          navigator.serviceWorker.ready.then(reg => reg.showNotification(`🛰 ${name} is visible now`, opts))
-            .catch(() => new Notification(`🛰 ${name} is visible now`, opts));
+          navigator.serviceWorker.ready.then(reg => reg.showNotification(`${name} is visible now`, opts))
+            .catch(() => new Notification(`${name} is visible now`, opts));
         } else {
-          new Notification(`🛰 ${name} is visible now`, opts);
+          new Notification(`${name} is visible now`, opts);
         }
         emit('becameVisible', r);
       }
